@@ -1,4 +1,3 @@
-export default `
 precision highp float;
 
 uniform sampler2D u_particles;
@@ -69,4 +68,3 @@ void main() {
         fract(pos * 255.0),
         floor(pos * 255.0) / 255.0);
 }
-`

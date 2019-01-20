@@ -1,4 +1,3 @@
-export default `
 precision mediump float;
 
 uniform sampler2D u_screen;
@@ -11,4 +10,3 @@ void main() {
     // a hack to guarantee opacity fade out even with a value close to 1.0
     gl_FragColor = vec4(floor(255.0 * color * u_opacity) / 255.0);
 }
-`

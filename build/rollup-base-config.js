@@ -4,6 +4,7 @@ const json = require('rollup-plugin-json');
 const cjs = require('rollup-plugin-commonjs');
 const nodeResolve = require('rollup-plugin-node-resolve');
 const replace = require('rollup-plugin-replace');
+const glslify = require('rollup-plugin-glslify');
 const { eslint } = require('rollup-plugin-eslint');
 const friendlyFormatter = require('eslint-friendly-formatter');
 const _package = require('../package.json');
@@ -29,7 +30,9 @@ const genConfig = (opts) => {
           formatter: friendlyFormatter,
           exclude: [resolve('node_modules')]
         }),
+        glslify({ basedir: 'src/shaders' }),
         babel({
+          babelHelpers: 'external',
           exclude: [
             resolve('package.json'),
             resolve('node_modules/**')

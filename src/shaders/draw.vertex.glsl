@@ -1,4 +1,3 @@
-export default `
 precision mediump float;
 
 attribute float a_index;
@@ -31,4 +30,3 @@ void main() {
     gl_PointSize = 1.0;
     gl_Position = u_matrix * vec4(v_particle_pos.x, y, 0, 1);
 }
-`

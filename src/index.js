@@ -1,23 +1,31 @@
 import * as maptalks from 'maptalks';
-import GLRenderer from './GLRenderer';
-import WindGL from './webgl-wind';
+import WindGL from './render/index';
+import Renderer from './render/renderer';
+
 const _options = {
-  'renderer': 'webgl',
-  'doubleBuffer': true,
-  'animation': true,
-  'glOptions': {
-    'alpha': true,
-    'antialias': true,
-    'preserveDrawingBuffer': true
-  }
+  renderer: 'webgl',
+  doubleBuffer: true,
+  animation: true,
+  glOptions: {
+    alpha: true,
+    antialias: true,
+    preserveDrawingBuffer: true,
+  },
 };
 
+// from https://github.com/maptalks/maptalks.mapboxgl/blob/5db0b124981f59e597ae66fb68c9763c53578ac2/index.js#L201
+const MAX_RES = 2 * 6378137 * Math.PI / (256 * Math.pow(2, 20)); // eslint-disable-line
+
+function getZoom(res) {
+  return 19 - Math.log(res / MAX_RES) / Math.LN2;
+}
+
 class WindLayer extends maptalks.CanvasLayer {
-  static getTargetZoom (map) {
+  static getTargetZoom(map) {
     return map.getMaxNativeZoom();
   }
 
-  constructor (id, datas = {}, options = {}) {
+  constructor(id, datas = {}, options = {}) {
     super(id, Object.assign(_options, options));
     this.datas = datas;
   }
@@ -26,7 +34,7 @@ class WindLayer extends maptalks.CanvasLayer {
    * get data
    * @returns {*}
    */
-  getWindData () {
+  getWindData() {
     return this.datas;
   }
 
@@ -34,46 +42,46 @@ class WindLayer extends maptalks.CanvasLayer {
    * set data
    * @param datas
    */
-  setWindData (datas) {
+  setWindData(datas) {
     this.datas = datas;
     this.renderScene();
   }
 
-  draw () {
+  draw() {
     this.renderScene();
   }
 
-  drawOnInteracting () {
+  drawOnInteracting() {
     this.renderScene();
   }
 
-  renderScene () {
+  _getViewState() {
     const map = this.getMap();
-    if (!map) return;
-    const extent = map.getExtent();
-    const viewMatrix = map.projMatrix;
-    const bbox = [extent['xmin'], extent['ymin'], extent['xmax'], extent['ymax']];
-    const renderer = this._getRenderer();
-    if (this.wind) {
-      this.wind.setView(bbox, viewMatrix);
-      this.wind.resize();
-    } else {
-      if (!renderer.gl) return;
-      this.wind = new WindGL(renderer.gl);
-      this.wind.setView(bbox, viewMatrix);
-      this.wind.resize();
+    const res = map.getResolution();
+    const center = map.getCenter();
+    const pitch = map.getPitch();
+    const bearing = map.getBearing();
+    return {
+      latitude: center.y,
+      longitude: center.x,
+      zoom: getZoom(res),
+      bearing,
+      pitch,
     }
+  }
 
-    if (this.wind && this.datas && this.datas.data && this.datas.image) {
-      this.wind.setWind(this.datas.data, this.datas.image);
-      this.wind.draw();
-    }
+  renderScene() {
+    const map = this.getMap()
+    const renderer = this._getRenderer();
+    console.log(map, WindGL); // eslint-disable-line
     renderer.completeRender();
+  }
+
+  remove() {
+    super.remove();
   }
 }
 
-WindLayer.registerRenderer('webgl', GLRenderer);
+WindLayer.registerRenderer('webgl', Renderer);
 
-export {
-  WindLayer
-};
+export default WindLayer;
