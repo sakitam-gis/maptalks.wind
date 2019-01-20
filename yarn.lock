@@ -4250,9 +4250,9 @@ rimraf@^2.2.8, rimraf@^2.6.0, rimraf@^2.6.1:
   dependencies:
     glob "^7.0.5"
 
-rollup-plugin-babel@^5.0.0-alpha.0:
-  version "5.0.0-alpha.0"
-  resolved "http://registry.npm.taobao.org/rollup-plugin-babel/download/rollup-plugin-babel-5.0.0-alpha.0.tgz#7cfa2071f1771782dc066b51ffe7b1458d03999d"
+rollup-plugin-babel@^4.3.0:
+  version "4.3.2"
+  resolved "http://registry.npm.taobao.org/rollup-plugin-babel/download/rollup-plugin-babel-4.3.2.tgz#8c0e1bd7aa9826e90769cf76895007098ffd1413"
   dependencies:
     "@babel/helper-module-imports" "^7.0.0"
     rollup-pluginutils "^2.3.0"

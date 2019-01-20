@@ -32,7 +32,29 @@ const genConfig = (opts) => {
         }),
         glslify({ basedir: 'src/shaders' }),
         babel({
-          babelHelpers: 'external',
+          babelrc: false,
+          presets: [
+            ['@babel/env', {
+              targets: {
+                browsers: ['> 1%', 'last 2 versions', 'not ie <= 8'],
+              },
+              loose: true,
+              modules: false,
+            }],
+            '@babel/preset-typescript',
+          ],
+          plugins: [
+            '@babel/external-helpers',
+            [
+              '@babel/plugin-proposal-class-properties',
+              { loose: true },
+            ]
+          ],
+          externalHelpers: false,
+          ignore: [
+            'dist/*.js',
+          ],
+          comments: false,
           exclude: [
             resolve('package.json'),
             resolve('node_modules/**')

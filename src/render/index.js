@@ -1,3 +1,5 @@
+// from https://github.com/mapbox/webgl-wind/blob/c1fa1316f7/src/index.js
+
 import {
   bindTexture,
   createBuffer,
@@ -168,7 +170,6 @@ export default class WindGL {
     const { gl } = this;
     const program = this.screenProgram;
     gl.useProgram(program.program);
-
     bindAttribute(gl, this.quadBuffer, program.a_pos, 2);
     bindTexture(gl, texture, 2);
     gl.uniform1i(program.u_screen, 2);

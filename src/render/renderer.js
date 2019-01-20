@@ -44,7 +44,7 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
       const size = map.getSize();
       const [width, height] = [retina * size.width, retina * size.height];
       this.canvas = createCanvas(width, height, retina, map.CanvasClass);
-      this.gl = createContext(this.canvas, this.layer.options.glOptions);
+      this.gl = createContext(this.canvas, 'webgl', this.layer.options.glOptions);
       this.onCanvasCreate();
       this.layer.fire('canvascreate', { context: this.context, gl: this.gl });
     }
@@ -55,7 +55,7 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
    * @param canvasSize
    */
   resizeCanvas(canvasSize) {
-    if (!this.canvas) return;
+    if (!this.canvas || !this.gl) return;
     const size = canvasSize || this.getMap().getSize();
     this.canvas.height = retina * size.height;
     this.canvas.width = retina * size.width;
@@ -66,7 +66,7 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
    * clear canvas
    */
   clearCanvas() {
-    if (!this.canvas) return;
+    if (!this.canvas || !this.gl) return;
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT); // eslint-disable-line
     if (this.context) {
       this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
