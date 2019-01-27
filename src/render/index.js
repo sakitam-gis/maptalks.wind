@@ -28,13 +28,6 @@ function getColorRamp(colors) {
   return new Uint8Array(ctx.getImageData(0, 0, 256, 1).data);
 }
 
-function mercY(y) {
-  const s = Math.sin(Math.PI * (y - 0.5));
-  const y2 = 1.0 - (Math.log((1.0 + s) / (1.0 - s)) / (2 * Math.PI) + 1.0) / 2.0;
-  return y2 < 0 ? 0 // eslint-disable-line
-    : y2 > 1 ? 1 : y2;
-}
-
 const defaultRampColors = {
   0.0: '#3288bd',
   0.1: '#66c2a5',
@@ -47,14 +40,23 @@ const defaultRampColors = {
 };
 
 export default class WindGL {
-  constructor(gl) {
+  constructor(gl, options = {}) {
+    const {
+      fadeOpacity,
+      speedFactor,
+      dropRate,
+      dropRateBump,
+      colorRamp,
+      numParticles,
+    } = options;
     this.gl = gl;
 
-    this.fadeOpacity = 0.996; // how fast the particle trails fade on each frame
-    this.speedFactor = 0.25; // how fast the particles move
-    this.dropRate = 0.003; // how often the particles move to a random place
-    this.dropRateBump = 0.01; // drop rate increase relative to individual particle speed
-    this.numParticles = 65536;
+    this.fadeOpacity = fadeOpacity || 0.996; // how fast the particle trails fade on each frame
+    this.speedFactor = speedFactor || 0.25; // how fast the particles move
+    this.dropRate = dropRate || 0.003; // how often the particles move to a random place
+    // drop rate increase relative to individual particle speed
+    this.dropRateBump = dropRateBump || 0.01;
+    // this.numParticles = numParticles || 65536;
 
     this.drawProgram = createProgram(gl, drawVert, drawFrag);
     this.screenProgram = createProgram(gl, quadVert, screenFrag);
@@ -63,9 +65,8 @@ export default class WindGL {
     this.quadBuffer = createBuffer(gl, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]));
     this.framebuffer = gl.createFramebuffer();
 
-    this.setColorRamp(defaultRampColors);
-    this.setView([0, 0, 1, 1]);
-    this.resize();
+    this.setColorRamp(colorRamp || defaultRampColors);
+    this.numParticles = numParticles || 65536;
   }
 
   resize() {
@@ -120,21 +121,9 @@ export default class WindGL {
     this.windTexture = createTexture(this.gl, this.gl.LINEAR, image);
   }
 
-  setView(bbox, matrix) {
-    this.bbox = bbox;
-    if (matrix) {
-      this.matrix = matrix;
-    } else {
-      const minX = bbox[0];
-      const minY = mercY(bbox[3]);
-      const maxX = bbox[2];
-      const maxY = mercY(bbox[1]);
-      const kx = 2 / (maxX - minX);
-      const ky = 2 / (maxY - minY);
-      this.matrix = new Float32Array(
-        [kx, 0, 0, 0, 0, ky, 0, 0, 0, 0, 1, 0, -1 - minX * kx, -1 - minY * ky, 0, 1],
-      );
-    }
+  setView(matrix) {
+    this.matrix = matrix;
+    this.resize();
   }
 
   draw() {
@@ -190,7 +179,7 @@ export default class WindGL {
     gl.uniform2f(program.u_wind_min, this.windData.uMin, this.windData.vMin);
     gl.uniform2f(program.u_wind_max, this.windData.uMax, this.windData.vMax);
     gl.uniformMatrix4fv(program.u_matrix, false, this.matrix);
-    gl.uniform4fv(program.u_bbox, this.bbox);
+    // gl.uniform4fv(program.u_bbox, this.bbox);
     gl.drawArrays(gl.POINTS, 0, this._numParticles);
   }
 
@@ -210,7 +199,7 @@ export default class WindGL {
     gl.uniform1f(program.u_speed_factor, this.speedFactor);
     gl.uniform1f(program.u_drop_rate, this.dropRate);
     gl.uniform1f(program.u_drop_rate_bump, this.dropRateBump);
-    gl.uniform4fv(program.u_bbox, this.bbox);
+    // gl.uniform4fv(program.u_bbox, this.bbox);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     // swap the particle state textures so the new one becomes the current one
     const temp = this.particleStateTexture0;

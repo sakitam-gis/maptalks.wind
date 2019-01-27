@@ -189,9 +189,7 @@ const getColorData = (color) => {
   return ctx.getImageData(0, 0, 1, 1).data;
 };
 
-const getTargetZoom = (map) => {
-  return map.getMaxNativeZoom() / 2;
-};
+const getTargetZoom = (map) => map.getMaxNativeZoom() / 2;
 
 export {
   bind,

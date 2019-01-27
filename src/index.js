@@ -4,7 +4,7 @@ import Renderer from './render/renderer';
 import {
   calcMatrices,
 } from './helper/gl-utils';
-import { getTargetZoom } from './helper';
+// import { getTargetZoom } from './helper';
 
 const _options = {
   renderer: 'webgl',
@@ -71,38 +71,17 @@ class WindLayer extends maptalks.CanvasLayer {
     ]
   }
 
-  _getViewPort(bbox) {
-    const map = this.getMap();
-    const targetZ = getTargetZoom(map);
-    const pixel1 = map.coordinateToPoint(new maptalks.Coordinate([
-      bbox[0], bbox[1],
-    ]), targetZ);
-    const pixel2 = map.coordinateToPoint(new maptalks.Coordinate([
-      bbox[2], bbox[3],
-    ]), targetZ);
-    const a = this._getPosition(pixel1);
-    const b = this._getPosition(pixel2);
-    return [
-      a[0], a[1], b[0], b[1],
-    ]
-  }
-
   renderScene() {
     const map = this.getMap();
     if (!map) return;
-    const extent = map.getExtent();
     const viewMatrix = calcMatrices(map);
-    const bbox = [extent.xmin, extent.ymin, extent.xmax, extent.ymax];
-    const viewPort = this._getViewPort(bbox);
     const renderer = this._getRenderer();
     if (this.wind) {
-      this.wind.setView(viewPort, viewMatrix);
-      this.wind.resize();
+      this.wind.setView(viewMatrix);
     } else {
       if (!renderer.gl) return;
       this.wind = new WindGL(renderer.gl);
-      this.wind.setView(viewPort, viewMatrix);
-      this.wind.resize();
+      this.wind.setView(viewMatrix);
     }
 
     if (this.wind && this.datas && this.datas.data && this.datas.image) {

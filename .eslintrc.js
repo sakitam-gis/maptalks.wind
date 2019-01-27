@@ -18,6 +18,7 @@ module.exports = {
   rules: {
     // allow semi
     'semi': 0,
+    'max-len': 0,
     'no-plusplus': 0,
     'import/no-unresolved': 0,
     'no-param-reassign': 0,
