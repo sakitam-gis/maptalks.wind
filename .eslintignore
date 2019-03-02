@@ -3,3 +3,4 @@ config/*.js
 test/**/*.js
 dist/
 src/shaders/**/*
+test/shaders/**/*

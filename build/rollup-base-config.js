@@ -19,7 +19,8 @@ const banner = `/*!\n * author: ${_package.author}
 const genConfig = (opts) => {
   const config = {
     input: {
-      input: resolve('src/index.js'),
+      // input: resolve('src/index.js'),
+      input: resolve('test/index.js'),
       plugins: [
         json({
           include: resolve('package.json'),
@@ -30,7 +31,8 @@ const genConfig = (opts) => {
           formatter: friendlyFormatter,
           exclude: [resolve('node_modules')]
         }),
-        glslify({ basedir: 'src/shaders' }),
+        // glslify({ basedir: 'src/shaders' }),
+        glslify({ basedir: 'test/shaders' }),
         babel({
           babelrc: false,
           presets: [
@@ -75,8 +77,9 @@ const genConfig = (opts) => {
       file: opts.file,
       format: opts.format,
       banner,
-      name: _package.namespace,
-      extend: true,
+      // name: _package.namespace,
+      // extend: true,
+      name: 'WindGL',
       globals: {
         'maptalks': 'maptalks'
       }

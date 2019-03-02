@@ -76,17 +76,14 @@ class WindLayer extends maptalks.CanvasLayer {
     if (!map) return;
     const viewMatrix = calcMatrices(map);
     const renderer = this._getRenderer();
-    if (this.wind) {
-      this.wind.setView(viewMatrix);
-    } else {
+    if (!this.wind) {
       if (!renderer.gl) return;
-      this.wind = new WindGL(renderer.gl);
-      this.wind.setView(viewMatrix);
+      this.wind = new WindGL(renderer.gl, {});
     }
 
     if (this.wind && this.datas && this.datas.data && this.datas.image) {
       this.wind.setWind(this.datas.data, this.datas.image);
-      this.wind.draw();
+      this.wind.render(viewMatrix);
     }
     renderer.completeRender();
   }

@@ -7,12 +7,15 @@ import {
   createProgram,
   bindAttribute,
   bindFramebuffer,
-} from '../helper/gl-utils';
-import drawVert from '../shaders/draw.vertex.glsl';
-import drawFrag from '../shaders/draw.fragment.glsl';
-import quadVert from '../shaders/quad.vertex.glsl';
-import screenFrag from '../shaders/screen.fragment.glsl';
-import updateFrag from '../shaders/update.fragment.glsl';
+} from './gl-utils';
+
+import drawVert from "./shaders/draw.vert.glsl";
+import drawFrag from "./shaders/draw.frag.glsl";
+
+import quadVert from "./shaders/quad.vert.glsl";
+
+import screenFrag from "./shaders/screen.frag.glsl";
+import updateFrag from "./shaders/update.frag.glsl";
 
 function getColorRamp(colors) {
   const canvas = document.createElement('canvas');

@@ -9,7 +9,6 @@ uniform float u_rand_seed;
 uniform float u_speed_factor;
 uniform float u_drop_rate;
 uniform float u_drop_rate_bump;
-//uniform vec4 u_bbox;
 
 varying vec2 v_tex_pos;
 
@@ -39,17 +38,14 @@ void main() {
         color.r / 255.0 + color.b,
         color.g / 255.0 + color.a); // decode particle position from pixel RGBA
 
-    // convert to global geographic position
-//    vec2 global_pos = u_bbox.xy + pos * (u_bbox.zw - u_bbox.xy);
-
     vec2 velocity = mix(u_wind_min, u_wind_max, lookup_wind(pos));
     float speed_t = length(velocity) / length(u_wind_max);
 
     // take EPSG:4236 distortion into account for calculating where the particle moved
-//    float distortion = cos(radians(global_pos.y * 180.0 - 90.0));
-//    vec2 offset = vec2(velocity.x / distortion, -velocity.y) * 0.0001 * u_speed_factor;
-    vec2 offset = vec2(velocity.x, -velocity.y) * 0.0001 * u_speed_factor;
-    // update particle position, wrapping around the boundaries
+    // float distortion = cos(radians(pos.y * 180.0 - 90.0));
+    vec2 offset = vec2(velocity.x /*/ distortion*/, -velocity.y) * 0.0001 * u_speed_factor;
+
+    // update particle position, wrapping around the date line
     pos = fract(1.0 + pos + offset);
 
     // a random seed to use for the particle drop
@@ -59,11 +55,11 @@ void main() {
     float drop_rate = u_drop_rate + speed_t * u_drop_rate_bump;
     float drop = step(1.0 - drop_rate, rand(seed));
 
-    float retain = step(drop_rate, rand(seed));
-
-    vec2 random_pos = vec2(rand(seed + 1.3), rand(seed + 2.1));
-//    pos = mix(pos, random_pos, 1.0 - retain);
+    vec2 random_pos = vec2(
+        rand(seed + 1.3),
+        rand(seed + 2.1));
     pos = mix(pos, random_pos, drop);
+
     // encode the new particle position back into RGBA
     gl_FragColor = vec4(
         fract(pos * 255.0),

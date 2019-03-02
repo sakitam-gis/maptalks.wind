@@ -38,7 +38,7 @@
     zoom: 5,
     centerCross: true,
     spatialReference:{
-      projection:'EPSG:3857'
+      projection:'EPSG:4326'
     },
     baseLayer: new maptalks.TileLayer('tile', {
       'urlTemplate': 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png',
@@ -51,7 +51,10 @@
 
   var layer = new maptalks.WindLayer('1', null, {
     'animation': true,
-    'renderer': 'webgl'
+    'renderer': 'webgl',
+    spatialReference:{
+      projection:'EPSG:3857'
+    }
   });
 
   map.addLayer(layer);
