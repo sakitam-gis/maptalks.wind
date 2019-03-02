@@ -64,6 +64,7 @@ export default class WindGL {
 
     this.quadBuffer = createBuffer(gl, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]));
     this.framebuffer = gl.createFramebuffer();
+    this.windData = undefined;
 
     this.setColorRamp(colorRamp || defaultRampColors);
     this.numParticles = numParticles || 65536;
@@ -123,8 +124,8 @@ export default class WindGL {
   }
 
   render(matrix) { // eslint-disable-line
-    const { gl } = this;
-    // this.matrix = JSON.parse('[3770.804809734272,0,0,0,0,-14685.487291460046,0,0,0,0,-4908.288037791965,-4895.162430486682,-2994.5333865497773,5668.44799568952,739.480171471856,739.5]');
+    const { gl, windData } = this;
+    if (!gl || !windData) return;
     this.matrix = matrix;
     const blendingEnabled = gl.isEnabled(gl.BLEND);
     gl.disable(gl.BLEND);

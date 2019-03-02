@@ -50,7 +50,9 @@ class WindLayer extends maptalks.CanvasLayer {
    */
   setWindData(datas) {
     this.datas = datas;
-    this.renderScene();
+    if (this.wind) {
+      this.wind.setWind(this.datas.data, this.datas.image);
+    }
   }
 
   draw() {
@@ -61,16 +63,6 @@ class WindLayer extends maptalks.CanvasLayer {
     this.renderScene();
   }
 
-  _getPosition(pixel) {
-    const { width, height } = this.getMap().getSize();
-    const [halfWidth, halfHeight] = [width / 2, height / 2];
-    const x = (pixel.x - halfWidth) / halfWidth;
-    const y = (halfHeight - pixel.y) / halfHeight;
-    return [
-      x, y,
-    ]
-  }
-
   renderScene() {
     const map = this.getMap();
     if (!map) return;
@@ -78,14 +70,35 @@ class WindLayer extends maptalks.CanvasLayer {
     const renderer = this._getRenderer();
     if (!this.wind) {
       if (!renderer.gl) return;
-      this.wind = new WindGL(renderer.gl, {});
+      const {
+        fadeOpacity,
+        speedFactor,
+        dropRate,
+        dropRateBump,
+        colorRamp,
+        numParticles,
+      } = this.options;
+      this.wind = new WindGL(renderer.gl, {
+        fadeOpacity,
+        speedFactor,
+        dropRate,
+        dropRateBump,
+        colorRamp,
+        numParticles,
+      });
     }
 
-    if (this.wind && this.datas && this.datas.data && this.datas.image) {
-      this.wind.setWind(this.datas.data, this.datas.image);
+    if (this.wind) {
       this.wind.render(viewMatrix);
     }
     renderer.completeRender();
+  }
+
+  onResize() {
+    if (this.wind) {
+      this.wind.resize()
+    }
+    // super.onResize()
   }
 
   remove() {
