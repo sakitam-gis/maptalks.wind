@@ -1,10 +1,7 @@
 import * as maptalks from 'maptalks';
+// import { mat4 } from '@mapbox/gl-matrix';
 import WindGL from './render/index';
 import Renderer from './render/renderer';
-import {
-  calcMatrices,
-} from './helper/gl-utils';
-// import { getTargetZoom } from './helper';
 
 const _options = {
   renderer: 'webgl',
@@ -63,13 +60,49 @@ class WindLayer extends maptalks.CanvasLayer {
     this.renderScene();
   }
 
+  initRender(map, gl) {
+    const vertexSource = `
+        uniform mat4 u_matrix;
+        void main() {
+            // gl_Position = u_matrix * vec4(0.5, 0.5, 0.0, 0.0);
+            gl_Position = u_matrix * vec4(0.25, 0.25, 0, 1);
+            gl_PointSize = 20.0;
+        }`;
+
+    const fragmentSource = `
+        void main() {
+            gl_FragColor = vec4(1.0, 0.0, 255.0, 1.0);
+        }`;
+
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vertexShader, vertexSource);
+    gl.compileShader(vertexShader);
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fragmentShader, fragmentSource);
+    gl.compileShader(fragmentShader);
+
+    this.program = gl.createProgram();
+    gl.attachShader(this.program, vertexShader);
+    gl.attachShader(this.program, fragmentShader);
+    gl.linkProgram(this.program);
+  }
+
+  render(gl, matrix) {
+    gl.useProgram(this.program);
+    gl.uniformMatrix4fv(gl.getUniformLocation(this.program, 'u_matrix'), false, matrix);
+    gl.drawArrays(gl.POINTS, 0, 1);
+  }
+
   renderScene() {
     const map = this.getMap();
     if (!map) return;
-    const viewMatrix = calcMatrices(map);
+    const projViewMatrix = map.projViewMatrix.slice();
+    // const worldSize = 512 * map.getGLScale();
+    // const mercatorMatrix = mat4.scale([], projViewMatrix, [worldSize, worldSize, worldSize]); // TODO: get view matrix
     const renderer = this._getRenderer();
     if (!this.wind) {
       if (!renderer.gl) return;
+      this.initRender(map, renderer.gl);
       const {
         fadeOpacity,
         speedFactor,
@@ -88,9 +121,10 @@ class WindLayer extends maptalks.CanvasLayer {
       });
     }
 
-    if (this.wind) {
-      this.wind.render(viewMatrix);
-    }
+    // if (this.wind) {
+    //   this.wind.render(projViewMatrix);
+    // }
+    this.render(renderer.gl, projViewMatrix);
     renderer.completeRender();
   }
 
@@ -109,5 +143,6 @@ class WindLayer extends maptalks.CanvasLayer {
 WindLayer.registerRenderer('webgl', Renderer);
 
 export {
+  // WindGL,
   WindLayer, // eslint-disable-line
 };

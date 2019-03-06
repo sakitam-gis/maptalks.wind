@@ -39,8 +39,8 @@ const defaultRampColors = {
   1.0: '#d53e4f',
 };
 
-export default class WindGL {
-  constructor(gl, options = {}) {
+class WindGL {
+  constructor(gl, options) {
     const {
       fadeOpacity,
       speedFactor,
@@ -48,24 +48,30 @@ export default class WindGL {
       dropRateBump,
       colorRamp,
       numParticles,
-    } = options;
+    } = options || {};
     this.gl = gl;
-
     this.fadeOpacity = fadeOpacity || 0.996; // how fast the particle trails fade on each frame
     this.speedFactor = speedFactor || 0.25; // how fast the particles move
     this.dropRate = dropRate || 0.003; // how often the particles move to a random place
     // drop rate increase relative to individual particle speed
     this.dropRateBump = dropRateBump || 0.01;
     // this.numParticles = numParticles || 65536;
-
     this.drawProgram = createProgram(gl, drawVert, drawFrag);
     this.screenProgram = createProgram(gl, quadVert, screenFrag);
     this.updateProgram = createProgram(gl, quadVert, updateFrag);
-
     this.quadBuffer = createBuffer(gl, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]));
     this.framebuffer = gl.createFramebuffer();
-    this.windData = undefined;
-
+    this.windData = {};
+    this.backgroundTexture = null;
+    this.screenTexture = null;
+    this.colorRampTexture = null;
+    this.particleStateResolution = Infinity;
+    this._numParticles = Infinity;
+    this.particleIndexBuffer = null;
+    this.particleStateTexture0 = null;
+    this.particleStateTexture1 = null;
+    this.windTexture = null;
+    this.matrix = [];
     this.setColorRamp(colorRamp || defaultRampColors);
     this.numParticles = numParticles || 65536;
     this.resize();
@@ -84,7 +90,7 @@ export default class WindGL {
   }
 
   setColorRamp(colors) {
-    // lookup texture for colorizing the particles according to their speed
+  // lookup texture for colorizing the particles according to their speed
     this.colorRampTexture = createTexture(
       this.gl, this.gl.LINEAR, getColorRamp(colors), 16, 16,
     );
@@ -99,7 +105,7 @@ export default class WindGL {
 
     const particleState = new Uint8Array(this._numParticles * 4);
     for (let i = 0; i < particleState.length; i++) {
-      // randomize the initial particle positions
+    // randomize the initial particle positions
       particleState[i] = Math.floor(Math.random() * 256);
     }
     // textures to hold the particle state for the current and the next frame
@@ -123,7 +129,7 @@ export default class WindGL {
     this.windTexture = createTexture(this.gl, this.gl.LINEAR, image);
   }
 
-  render(matrix) { // eslint-disable-line
+  render(matrix) {
     const { gl, windData } = this;
     if (!gl || !windData) return;
     this.matrix = matrix;
@@ -180,6 +186,9 @@ export default class WindGL {
     gl.uniform1f(program.u_particles_res, this.particleStateResolution);
     gl.uniform2f(program.u_wind_min, this.windData.uMin, this.windData.vMin);
     gl.uniform2f(program.u_wind_max, this.windData.uMax, this.windData.vMax);
+    // 1、要修改的uniform属性的位置的对象
+    // 2、是否逆转矩阵
+    // 3、矩阵
     gl.uniformMatrix4fv(program.u_matrix, false, this.matrix);
     // gl.uniform4fv(program.u_bbox, this.bbox);
     gl.drawArrays(gl.POINTS, 0, this._numParticles);
@@ -209,3 +218,5 @@ export default class WindGL {
     this.particleStateTexture1 = temp;
   }
 }
+
+export default WindGL;

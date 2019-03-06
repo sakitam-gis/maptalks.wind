@@ -17,6 +17,7 @@
 <body>
 <div id="map"></div>
 <script src="../node_modules/maptalks/dist/maptalks.js"></script>
+<!--<script src="http://localhost:20000/maptalks.js"></script>-->
 <script src="../dist/maptalks.wind.js"></script>
 <script type="text/javascript">
   function getJSON(url, callback) {
@@ -38,7 +39,7 @@
     zoom: 5,
     centerCross: true,
     spatialReference:{
-      projection:'EPSG:4326'
+      projection:'EPSG:3857'
     },
     baseLayer: new maptalks.TileLayer('tile', {
       'urlTemplate': 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png',
@@ -50,10 +51,10 @@
   });
 
   var layer = new maptalks.WindLayer('1', null, {
-    'animation': true,
-    'renderer': 'webgl',
+    animation: true,
+    renderer: 'webgl',
     spatialReference:{
-      projection:'EPSG:3857'
+      projection:'EPSG:4326'
     }
   });
 

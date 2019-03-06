@@ -1,17 +1,9 @@
-import * as maptalks from 'maptalks';
-import { mat4 } from '@mapbox/gl-matrix';
-import {
-  getTargetZoom,
-} from './index';
-
-const RADIAN = Math.PI / 180;
-
 function createShader(gl, type, source) {
   const shader = gl.createShader(type);
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    throw new Error(gl.getShaderInfoLog(shader));
+    throw new Error(gl.getShaderInfoLog(shader) || '');
   }
   return shader;
 }
@@ -24,7 +16,7 @@ function createProgram(gl, vertexSource, fragmentSource) {
   gl.attachShader(program, fragmentShader);
   gl.linkProgram(program);
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(gl.getProgramInfoLog(program));
+    throw new Error(gl.getProgramInfoLog(program) || '');
   }
   const wrapper = {
     program,
@@ -113,58 +105,6 @@ function bindFramebuffer(gl, framebuffer, texture) {
   }
 }
 
-function getFovRatio(map) {
-  const fov = map.getFov();
-  return Math.tan(fov / 2 * Math.PI / 180);
-}
-
-function getLookAtMat(map) {
-  const targetZ = getTargetZoom(map);
-  const size = map.getSize();
-  const scale = map.getScale() / map.getScale(targetZ);
-  const center2D = map.coordinateToPoint(map.getCenter(), targetZ);
-  const pitch = map.getPitch() * RADIAN;
-  const bearing = -map.getBearing() * RADIAN;
-  const ratio = getFovRatio(map);
-  const z = scale * size.height / 2 / ratio;
-  const cz = z * Math.cos(pitch);
-  // and [dist] away from map's center on XY plane to tilt the scene.
-  const dist = Math.sin(pitch) * z;
-  const cx = center2D.x + dist * Math.sin(bearing);
-  const cy = center2D.y + dist * Math.cos(bearing);
-  // when map rotates, camera's up axis is pointing to bearing from south direction of map
-  // default [0,1,0] is the Y axis while the angle of inclination always equal 0
-  // if you want to rotate the map after up an incline,please rotateZ like this:
-  // let up = new vec3(0,1,0);
-  // up.rotateZ(target,radians);
-  const up = [Math.sin(bearing), Math.cos(bearing), 0];
-  const m = mat4.create();
-  mat4.lookAt(m, [cx, cy, cz], [center2D.x, center2D.y, 0], up);
-  return m;
-}
-
-function calcMatrices(map) {
-  // get pixel size of map
-  const size = map.getSize();
-  // get field of view
-  const fov = map.getFov() * Math.PI / 180;
-  const maxScale = map.getScale(map.getMinZoom()) / map.getScale(map.getMaxNativeZoom());
-  const farZ = maxScale * size.height / 2 / getFovRatio(map);
-  const m = mat4.create();
-  mat4.perspective(m, fov, size.width / size.height, 1, farZ);
-  const m1 = mat4.create();
-  if (!maptalks.Util.IS_NODE) {
-    // doesn't need to flip Y with headless-gl, unknown reason
-    mat4.scale(m, m, [1, -1, 1]);
-  }
-  // m1: projection matrix
-  mat4.copy(m1, m);
-  // m2: view matrix
-  const m2 = getLookAtMat(map);
-  mat4.multiply(m, m1, m2);
-  return m;
-}
-
 export {
   createBuffer,
   createProgram,
@@ -172,6 +112,5 @@ export {
   bindFramebuffer,
   bindTexture,
   createTexture,
-  calcMatrices,
   enableVertexAttrib,
 }
