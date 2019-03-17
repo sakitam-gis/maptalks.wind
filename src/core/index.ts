@@ -45,7 +45,6 @@ const defaultRampColors = {
 };
 
 class WindGL {
-  matrix: any;
   gl: WebGLRenderingContext;
   fadeOpacity: number;
   speedFactor: number;
@@ -97,12 +96,12 @@ class WindGL {
     this.dropRateBump = dropRateBump || 0.01;
     // this.numParticles = numParticles || 65536;
 
-    this.drawProgram = createProgram(gl, drawVert, drawFrag);
-    this.screenProgram = createProgram(gl, quadVert, screenFrag);
-    this.updateProgram = createProgram(gl, quadVert, updateFrag);
+    this.drawProgram = null;
+    this.screenProgram = null;
+    this.updateProgram = null;
 
-    this.quadBuffer = createBuffer(gl, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]));
-    this.framebuffer = gl.createFramebuffer();
+    this.quadBuffer = null;
+    this.framebuffer = null;
     // @ts-ignore
     this.windData = {};
 
@@ -118,11 +117,21 @@ class WindGL {
 
     this.windTexture = null;
 
-    this.matrix = [];
+    this.resize();
+    this.initialize(gl, colorRamp, numParticles);
+  }
+
+  initialize(gl: WebGLRenderingContext, colorRamp: object, numParticles: number) {
+    this.drawProgram = createProgram(gl, drawVert, drawFrag);
+    this.updateProgram = createProgram(gl, quadVert, updateFrag);
+
+    this.screenProgram = createProgram(gl, quadVert, screenFrag);
+
+    this.quadBuffer = createBuffer(gl, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]));
+    this.framebuffer = gl.createFramebuffer();
 
     this.setColorRamp(colorRamp || defaultRampColors);
     this.numParticles = numParticles || 65536;
-    this.resize();
   }
 
   resize() {
@@ -186,28 +195,26 @@ class WindGL {
     this.windTexture = createTexture(this.gl, this.gl.LINEAR, image);
   }
 
+  prepareToDraw() {
+    const [gl, windData] = [this.gl, this.windData];
+    if (!gl || !windData) return;
+    this.updateParticles();
+  }
+
   render(matrix: any) {
     const [gl, windData] = [this.gl, this.windData];
     if (!gl || !windData) return;
-    this.matrix = matrix;
-    const blendingEnabled = gl.isEnabled(gl.BLEND);
-    gl.disable(gl.BLEND);
-    gl.disable(gl.DEPTH_TEST);
-    gl.disable(gl.STENCIL_TEST);
-    bindTexture(gl, this.windTexture, 0);
-    bindTexture(gl, this.particleStateTexture0, 1);
-    this.drawScreen();
-    this.updateParticles();
-    if (blendingEnabled) gl.enable(gl.BLEND);
+    this.drawScreen(matrix);
+    // this.drawParticles(matrix);
   }
 
-  drawScreen() {
+  drawScreen(matrix: []) {
     const gl = this.gl;
     // draw the screen into a temporary framebuffer to retain it as the background on the next frame
     bindFramebuffer(gl, this.framebuffer, this.screenTexture);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     this.drawTexture(this.backgroundTexture, this.fadeOpacity);
-    this.drawParticles();
+    this.drawParticles(matrix);
     bindFramebuffer(gl, null);
     // enable blending to support drawing on top of an existing background (e.g. a map)
     gl.enable(gl.BLEND);
@@ -231,12 +238,17 @@ class WindGL {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
-  drawParticles() {
+  drawParticles(matrix: []) {
     const gl = this.gl;
     const program = this.drawProgram;
     gl.useProgram(program.program);
-    bindAttribute(gl, this.particleIndexBuffer, program.a_index, 1);
+
+    bindTexture(gl, this.windTexture, 0);
+    bindTexture(gl, this.particleStateTexture0, 1);
     bindTexture(gl, this.colorRampTexture, 2);
+
+    bindAttribute(gl, this.particleIndexBuffer, program.a_index, 1);
+
     gl.uniform1i(program.u_wind, 0);
     gl.uniform1i(program.u_particles, 1);
     gl.uniform1i(program.u_color_ramp, 2);
@@ -246,17 +258,23 @@ class WindGL {
     // 1、要修改的uniform属性的位置的对象
     // 2、是否逆转矩阵
     // 3、矩阵
-    gl.uniformMatrix4fv(program.u_matrix, false, this.matrix);
+    gl.uniformMatrix4fv(program.u_matrix, false, matrix);
     // gl.uniform4fv(program.u_bbox, this.bbox);
     gl.drawArrays(gl.POINTS, 0, this._numParticles);
   }
 
   updateParticles() {
     const gl = this.gl;
+
+    const blendingEnabled = gl.isEnabled(gl.BLEND);
+    gl.disable(gl.BLEND);
     bindFramebuffer(gl, this.framebuffer, this.particleStateTexture1);
     gl.viewport(0, 0, this.particleStateResolution, this.particleStateResolution);
     const program = this.updateProgram;
     gl.useProgram(program.program);
+
+    bindTexture(gl, this.windTexture, 0);
+    bindTexture(gl, this.particleStateTexture0, 1);
     bindAttribute(gl, this.quadBuffer, program.a_pos, 2);
     gl.uniform1i(program.u_wind, 0);
     gl.uniform1i(program.u_particles, 1);
@@ -273,6 +291,8 @@ class WindGL {
     const temp = this.particleStateTexture0;
     this.particleStateTexture0 = this.particleStateTexture1;
     this.particleStateTexture1 = temp;
+
+    if (blendingEnabled) gl.enable(gl.BLEND);
   }
 }
 
