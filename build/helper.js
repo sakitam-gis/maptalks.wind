@@ -1,30 +1,15 @@
-const fs = require('fs');
 const path = require('path');
 const _package = require('../package.json');
 const resolve = _path => path.resolve(__dirname, '../', _path);
-/**
- * get file size
- * @param code
- * @returns {string}
- */
-const getSize = (code) => {
-  return (code.length / 1024).toFixed(2) + 'kb'
-};
-/**
- * print error
- * @param e
- */
-const logError = (e) => {
-  console.log(e)
-};
-/**
- * add message color
- * @param str
- * @returns {string}
- */
-const blueString = (str) => {
-  return '\x1b[1m\x1b[34m' + str + '\x1b[39m\x1b[22m'
-};
+
+const time = new Date();
+const year = time.getFullYear();
+const banner = `/*!\n * author: ${_package.author} 
+ * ${_package.name} v${_package.version}
+ * build-time: ${year}-${time.getMonth() + 1}-${time.getDate()} ${time.getHours()}:${time.getMinutes()}
+ * LICENSE: ${_package.license}
+ * (c) 2018-${year} ${_package.homepage}\n */`;
+
 /**
  * handle min file
  * @param name
@@ -45,30 +30,11 @@ const handleMinEsm = name => {
     return arrTemp.join('.')
   }
 };
-/**
- * check dir exist
- * @param path
- * @param mkdir
- * @returns {boolean}
- */
-const checkFolderExist = (path, mkdir) => {
-  if (!fs.existsSync(path)) {
-    if (mkdir) {
-      fs.mkdirSync(path)
-    }
-    return false
-  } else {
-    return true
-  }
-};
 
 
 module.exports = {
   _package,
   resolve,
-  getSize,
-  logError,
-  blueString,
-  handleMinEsm,
-  checkFolderExist
+  banner,
+  handleMinEsm
 };
