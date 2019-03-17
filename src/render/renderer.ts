@@ -1,9 +1,16 @@
+// @ts-ignore
 import * as maptalks from 'maptalks';
-import { createCanvas, createContext } from '../helper';
+import { createCanvas, createContext } from '../utils';
 
 const retina = maptalks.Browser.retina ? 2 : 1;
 
 class Renderer extends maptalks.renderer.CanvasLayerRenderer {
+  private _drawContext: any;
+  private canvas: HTMLCanvasElement | undefined;
+  private buffer: HTMLCanvasElement | undefined;
+  private layer: any;
+  private context: CanvasRenderingContext2D | null | undefined;
+  private gl: WebGLRenderingContext | undefined | null;
   draw() {
     this.prepareCanvas();
     this.prepareDrawContext();
@@ -44,7 +51,7 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
       const size = map.getSize();
       const [width, height] = [retina * size.width, retina * size.height];
       this.canvas = createCanvas(width, height, retina, map.CanvasClass);
-      this.gl = createContext(this.canvas, 'webgl', this.layer.options.glOptions);
+      this.gl = createContext(this.canvas, this.layer.options.glOptions);
       this.onCanvasCreate();
       this.layer.fire('canvascreate', { context: this.context, gl: this.gl });
     }
@@ -54,7 +61,7 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
    * when map changed, call canvas change
    * @param canvasSize
    */
-  resizeCanvas(canvasSize) {
+  resizeCanvas(canvasSize: any) {
     if (!this.canvas || !this.gl) return;
     const size = canvasSize || this.getMap().getSize();
     this.canvas.height = retina * size.height;
@@ -84,17 +91,29 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
     return mask;
   }
 
-  onZoomStart(...args) {
+  onZoomStart(...args: any[]) {
     super.onZoomStart.apply(this, args);
   }
 
-  onZoomEnd(...args) {
+  onZoomEnd(...args: any[]) {
     super.onZoomEnd.apply(this, args);
   }
 
   remove() {
     delete this._drawContext;
     super.remove();
+  }
+
+  public getMap() {
+    return super.getMap();
+  }
+
+  public _drawLayer() {
+    return super._drawLayer()
+  }
+
+  public prepareDrawContext() {
+    return super.prepareDrawContext()
   }
 }
 

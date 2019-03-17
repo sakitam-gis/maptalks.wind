@@ -1,6 +1,7 @@
+// @ts-ignore
 import * as maptalks from 'maptalks';
 // import { mat4 } from '@mapbox/gl-matrix';
-import WindGL from './render/index';
+import WindGL from './core/index';
 import Renderer from './render/renderer';
 
 const _options = {
@@ -22,7 +23,22 @@ const _options = {
 // }
 
 class WindLayer extends maptalks.CanvasLayer {
-  constructor(id, datas = {}, options = {}) {
+  private datas: {
+    data: {
+      source: string;
+      date: Date;
+      width: number;
+      height: number;
+      uMin: number;
+      uMax: number;
+      vMin: number;
+      vMax: number;
+    }, image: any
+  };
+  private wind: WindGL | null;
+  private program: WebGLProgram | null | undefined;
+  private options: {};
+  constructor(id: any, datas: any, options = {}) {
     super(id, Object.assign(_options, options));
     this.datas = datas;
 
@@ -31,6 +47,8 @@ class WindLayer extends maptalks.CanvasLayer {
      * @type {null}
      */
     this.wind = null;
+
+    this.options = {};
   }
 
   /**
@@ -45,7 +63,18 @@ class WindLayer extends maptalks.CanvasLayer {
    * set data
    * @param datas
    */
-  setWindData(datas) {
+  setWindData(datas: {
+    data: {
+      source: string;
+      date: Date;
+      width: number;
+      height: number;
+      uMin: number;
+      uMax: number;
+      vMin: number;
+      vMax: number;
+    }, image: any
+  }) {
     this.datas = datas;
     if (this.wind) {
       this.wind.setWind(this.datas.data, this.datas.image);
@@ -60,7 +89,7 @@ class WindLayer extends maptalks.CanvasLayer {
     this.renderScene();
   }
 
-  initRender(map, gl) {
+  initRender(map: any, gl: WebGLRenderingContext) {
     const vertexSource = `
         uniform mat4 u_matrix;
         void main() {
@@ -74,21 +103,29 @@ class WindLayer extends maptalks.CanvasLayer {
             gl_FragColor = vec4(1.0, 0.0, 255.0, 1.0);
         }`;
 
-    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    // @ts-ignore
+    const vertexShader: WebGLShader = gl.createShader(gl.VERTEX_SHADER);
     gl.shaderSource(vertexShader, vertexSource);
     gl.compileShader(vertexShader);
-    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    // @ts-ignore
+    const fragmentShader: WebGLShader = gl.createShader(gl.FRAGMENT_SHADER);
     gl.shaderSource(fragmentShader, fragmentSource);
     gl.compileShader(fragmentShader);
 
     this.program = gl.createProgram();
+    // @ts-ignore
     gl.attachShader(this.program, vertexShader);
+    // @ts-ignore
     gl.attachShader(this.program, fragmentShader);
+    // @ts-ignore
     gl.linkProgram(this.program);
+    console.log(map);
   }
 
-  render(gl, matrix) {
+  render(gl: WebGLRenderingContext, matrix: []) {
+    // @ts-ignore
     gl.useProgram(this.program);
+    // @ts-ignore
     gl.uniformMatrix4fv(gl.getUniformLocation(this.program, 'u_matrix'), false, matrix);
     gl.drawArrays(gl.POINTS, 0, 1);
   }
@@ -103,14 +140,8 @@ class WindLayer extends maptalks.CanvasLayer {
     if (!this.wind) {
       if (!renderer.gl) return;
       this.initRender(map, renderer.gl);
-      const {
-        fadeOpacity,
-        speedFactor,
-        dropRate,
-        dropRateBump,
-        colorRamp,
-        numParticles,
-      } = this.options;
+      // @ts-ignore
+      const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles } = this.options;
       this.wind = new WindGL(renderer.gl, {
         fadeOpacity,
         speedFactor,
@@ -132,11 +163,23 @@ class WindLayer extends maptalks.CanvasLayer {
     if (this.wind) {
       this.wind.resize()
     }
-    // super.onResize()
+    super.onResize()
   }
 
   remove() {
     super.remove();
+  }
+
+  public getMap() {
+    return super.getMap();
+  }
+
+  public _getRenderer() {
+    return super._getRenderer();
+  }
+
+  static registerRenderer(type: string, render: any) {
+    return super.registerRenderer(type, render);
   }
 }
 
@@ -144,5 +187,5 @@ WindLayer.registerRenderer('webgl', Renderer);
 
 export {
   // WindGL,
-  WindLayer, // eslint-disable-line
+  WindLayer,
 };
