@@ -9,8 +9,10 @@ const config = Object.assign(baseConfig, {
       format: 'umd',
       name: _package.namespace,
       banner: banner,
-      extend: false,
-      globals: {}
+      extend: true,
+      globals: {
+        'maptalks': 'maptalks'
+      }
     }
   ]
 });

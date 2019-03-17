@@ -33,11 +33,11 @@ class WindLayer extends maptalks.CanvasLayer {
       uMax: number;
       vMin: number;
       vMax: number;
-    }, image: any
+    },
+    image: any,
   };
   private wind: WindGL | null;
   private program: WebGLProgram | null | undefined;
-  private options: {};
   constructor(id: any, datas: any, options = {}) {
     super(id, Object.assign(_options, options));
     this.datas = datas;
@@ -47,8 +47,6 @@ class WindLayer extends maptalks.CanvasLayer {
      * @type {null}
      */
     this.wind = null;
-
-    this.options = {};
   }
 
   /**
@@ -73,7 +71,8 @@ class WindLayer extends maptalks.CanvasLayer {
       uMax: number;
       vMin: number;
       vMax: number;
-    }, image: any
+    },
+    image: any,
   }) {
     this.datas = datas;
     if (this.wind) {
@@ -131,11 +130,14 @@ class WindLayer extends maptalks.CanvasLayer {
   }
 
   renderScene() {
+    // @ts-ignore
     const map = this.getMap();
     if (!map) return;
     const projViewMatrix = map.projViewMatrix.slice();
     // const worldSize = 512 * map.getGLScale();
-    // const mercatorMatrix = mat4.scale([], projViewMatrix, [worldSize, worldSize, worldSize]); // TODO: get view matrix
+    // const mercatorMatrix = mat4.scale([], projViewMatrix,
+    // [worldSize, worldSize, worldSize]); // TODO: get view matrix
+    // @ts-ignore
     const renderer = this._getRenderer();
     if (!this.wind) {
       if (!renderer.gl) return;
@@ -161,28 +163,17 @@ class WindLayer extends maptalks.CanvasLayer {
 
   onResize() {
     if (this.wind) {
-      this.wind.resize()
+      this.wind.resize();
     }
-    super.onResize()
+    super.onResize();
   }
 
   remove() {
     super.remove();
   }
-
-  public getMap() {
-    return super.getMap();
-  }
-
-  public _getRenderer() {
-    return super._getRenderer();
-  }
-
-  static registerRenderer(type: string, render: any) {
-    return super.registerRenderer(type, render);
-  }
 }
 
+// @ts-ignore
 WindLayer.registerRenderer('webgl', Renderer);
 
 export {

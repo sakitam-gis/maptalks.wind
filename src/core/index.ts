@@ -9,15 +9,15 @@ import {
   bindFramebuffer,
 } from './utils';
 // @ts-ignore
-import * as drawVert from '../shaders/draw.vertex.glsl';
+import drawVert from '../shaders/draw.vertex.glsl';
 // @ts-ignore
-import * as drawFrag from '../shaders/draw.fragment.glsl';
+import drawFrag from '../shaders/draw.fragment.glsl';
 // @ts-ignore
-import * as quadVert from '../shaders/quad.vertex.glsl';
+import quadVert from '../shaders/quad.vertex.glsl';
 // @ts-ignore
-import * as screenFrag from '../shaders/screen.fragment.glsl';
+import screenFrag from '../shaders/screen.fragment.glsl';
 // @ts-ignore
-import * as updateFrag from '../shaders/update.fragment.glsl';
+import updateFrag from '../shaders/update.fragment.glsl';
 
 function getColorRamp(colors: {}) {
   const canvas = document.createElement('canvas');
@@ -126,7 +126,7 @@ class WindGL {
   }
 
   resize() {
-    const { gl } = this;
+    const gl = this.gl;
     const emptyPixels = new Uint8Array(gl.canvas.width * gl.canvas.height * 4);
     // screen textures to hold the drawn screen for the previous and the current frame
     this.backgroundTexture = createTexture(
@@ -145,7 +145,7 @@ class WindGL {
   }
 
   set numParticles(numParticles) {
-    const { gl } = this;
+    const gl = this.gl;
     // we create a square texture where each pixel will hold a particle position encoded as RGBA
     const particleRes = Math.ceil(Math.sqrt(numParticles));
     this.particleStateResolution = particleRes;
@@ -181,13 +181,13 @@ class WindGL {
     uMax: number;
     vMin: number;
     vMax: number;
-  }, image: any) {
+  },      image: any) {
     this.windData = data;
     this.windTexture = createTexture(this.gl, this.gl.LINEAR, image);
   }
 
-  render(matrix: any) { // eslint-disable-line
-    const { gl, windData } = this;
+  render(matrix: any) {
+    const [gl, windData] = [this.gl, this.windData];
     if (!gl || !windData) return;
     this.matrix = matrix;
     const blendingEnabled = gl.isEnabled(gl.BLEND);
@@ -202,7 +202,7 @@ class WindGL {
   }
 
   drawScreen() {
-    const { gl } = this;
+    const gl = this.gl;
     // draw the screen into a temporary framebuffer to retain it as the background on the next frame
     bindFramebuffer(gl, this.framebuffer, this.screenTexture);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -220,8 +220,8 @@ class WindGL {
     this.screenTexture = temp;
   }
 
-  drawTexture(texture:WebGLTexture|null, opacity:number) {
-    const { gl } = this;
+  drawTexture(texture: WebGLTexture | null, opacity: number) {
+    const gl = this.gl;
     const program = this.screenProgram;
     gl.useProgram(program.program);
     bindAttribute(gl, this.quadBuffer, program.a_pos, 2);
@@ -232,7 +232,7 @@ class WindGL {
   }
 
   drawParticles() {
-    const { gl } = this;
+    const gl = this.gl;
     const program = this.drawProgram;
     gl.useProgram(program.program);
     bindAttribute(gl, this.particleIndexBuffer, program.a_index, 1);
@@ -252,7 +252,7 @@ class WindGL {
   }
 
   updateParticles() {
-    const { gl } = this;
+    const gl = this.gl;
     bindFramebuffer(gl, this.framebuffer, this.particleStateTexture1);
     gl.viewport(0, 0, this.particleStateResolution, this.particleStateResolution);
     const program = this.updateProgram;

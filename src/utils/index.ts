@@ -112,4 +112,4 @@ const createContext = (canvas: HTMLCanvasElement, glOptions = {}): WebGLRenderin
 export {
   createCanvas,
   createContext,
-}
+};

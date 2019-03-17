@@ -18,7 +18,12 @@ module.exports = {
       include: resolve('package.json'),
       indent: ' '
     }),
-    tslint(),
+    tslint({
+      exclude: [
+        'node_modules/**',
+        'src/shaders/**'
+      ]
+    }),
     typescript({
       clean: true,
       useTsconfigDeclarationDir: true,

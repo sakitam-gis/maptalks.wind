@@ -8,22 +8,28 @@ module.exports = Object.assign(baseConfig, {
       format: 'umd',
       name: _package.namespace,
       banner: banner,
-      extend: false,
-      globals: {}
+      extend: true,
+      globals: {
+        'maptalks': 'maptalks'
+      }
     },
     {
       file: _package.commonjs,
       format: 'cjs',
       banner: banner,
-      extend: false,
-      globals: {}
+      extend: true,
+      globals: {
+        'maptalks': 'maptalks'
+      }
     },
     {
       file: _package.module,
       format: 'es',
       banner: banner,
-      extend: false,
-      globals: {}
+      extend: true,
+      globals: {
+        'maptalks': 'maptalks'
+      }
     }
   ]
 });

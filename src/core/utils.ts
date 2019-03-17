@@ -1,5 +1,5 @@
-function createShader(gl: WebGLRenderingContext, type: number, source: string):WebGLShader {
-  const shader:WebGLShader | null = gl.createShader(type) || {};
+function createShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader {
+  const shader: WebGLShader | null = gl.createShader(type) || {};
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -8,7 +8,7 @@ function createShader(gl: WebGLRenderingContext, type: number, source: string):W
   return shader;
 }
 
-function createProgram(gl: WebGLRenderingContext, vertexSource: string, fragmentSource: string):object {
+function createProgram(gl: WebGLRenderingContext, vertexSource: string, fragmentSource: string): object {
   const program: WebGLProgram = gl.createProgram() || '';
   const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
@@ -36,7 +36,9 @@ function createProgram(gl: WebGLRenderingContext, vertexSource: string, fragment
   return wrapper;
 }
 
-function createTexture(gl: WebGLRenderingContext, filter: GLint, data: Uint8Array, width?: number, height?: number):WebGLTexture | null {
+function createTexture(
+  gl: WebGLRenderingContext, filter: GLint, data: Uint8Array, width?: number, height?: number,
+): WebGLTexture | null {
   const texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -87,4 +89,4 @@ export {
   bindFramebuffer,
   bindTexture,
   createTexture,
-}
+};

@@ -5,9 +5,10 @@
   "author": "sakitam-fdd <smilefdd@gmail.com>",
   "homepage": "",
   "private": false,
-  "main": "dist/maptalks.wind.common.js",
-  "module": "dist/maptalks.wind.esm.js",
   "unpkg": "dist/maptalks.wind.js",
+  "main": "dist/maptalks.wind.js",
+  "module": "dist/maptalks.wind.esm.js",
+  "commonjs": "dist/maptalks.wind.common.js",
   "namespace": "maptalks",
   "scripts": {
     "dev": "rollup -wm -c build/rollup-dev-config.js",
@@ -15,7 +16,7 @@
   },
   "dependencies": {
     "@mapbox/gl-matrix": "^0.0.1",
-    "maptalks": "^0.40.2"
+    "maptalks": "^0.43.0"
   },
   "devDependencies": {
     "@babel/core": "^7.3.4",
@@ -27,6 +28,7 @@
     "@babel/preset-typescript": "^7.3.3",
     "@babel/types": "^7.3.4",
     "@types/node": "^10.12.18",
+    "babel-plugin-istanbul": "^5.1.1",
     "cross-env": "^5.2.0",
     "expect.js": "^0.3.1",
     "happen": "^0.3.2",
@@ -44,9 +46,6 @@
     "mocha": "^5.2.0",
     "rollup": "^1.4.1",
     "rollup-plugin-babel": "^4.3.2",
-    "rollup-plugin-uglify": "^6.0.2",
-    "rollup-plugin-typescript": "^1.0.0",
-    "rollup-plugin-typescript2": "^0.19.3",
     "rollup-plugin-commonjs": "^9.2.1",
     "rollup-plugin-glslify": "^1.1.0",
     "rollup-plugin-json": "^3.1.0",
@@ -54,12 +53,14 @@
     "rollup-plugin-node-resolve": "^4.0.1",
     "rollup-plugin-replace": "^2.1.0",
     "rollup-plugin-tslint": "^0.2.2",
-    "babel-plugin-istanbul": "^5.1.1",
+    "rollup-plugin-typescript": "^1.0.0",
+    "rollup-plugin-typescript2": "^0.19.3",
+    "rollup-plugin-uglify": "^6.0.2",
+    "tslib": "^1.9.3",
     "tslint": "^5.13.1",
     "tslint-config-airbnb": "^5.11.1",
-    "tslint-react": "^3.6.0",
-    "typescript": "^3.2.2",
-    "tslib": "^1.9.3"
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.2.2"
   },
   "engines": {
     "node": ">= 4.0.0",

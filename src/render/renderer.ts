@@ -13,7 +13,9 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
   private gl: WebGLRenderingContext | undefined | null;
   draw() {
     this.prepareCanvas();
+    // @ts-ignore
     this.prepareDrawContext();
+    // @ts-ignore
     this._drawLayer();
   }
 
@@ -45,7 +47,6 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
    * create canvas
    */
   createCanvas() {
-    if (this.canvas) return;
     if (!this.canvas) {
       const map = this.getMap();
       const size = map.getSize();
@@ -62,21 +63,23 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
    * @param canvasSize
    */
   resizeCanvas(canvasSize: any) {
-    if (!this.canvas || !this.gl) return;
-    const size = canvasSize || this.getMap().getSize();
-    this.canvas.height = retina * size.height;
-    this.canvas.width = retina * size.width;
-    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    if (this.canvas && this.gl) {
+      const size = canvasSize || this.getMap().getSize();
+      this.canvas.height = retina * size.height;
+      this.canvas.width = retina * size.width;
+      this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    }
   }
 
   /**
    * clear canvas
    */
   clearCanvas() {
-    if (!this.canvas || !this.gl) return;
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT); // eslint-disable-line
-    if (this.context) {
-      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    if (this.canvas && this.gl) {
+      this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+      if (this.context) {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      }
     }
   }
 
@@ -104,16 +107,8 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
     super.remove();
   }
 
-  public getMap() {
+  getMap() {
     return super.getMap();
-  }
-
-  public _drawLayer() {
-    return super._drawLayer()
-  }
-
-  public prepareDrawContext() {
-    return super.prepareDrawContext()
   }
 }
 
