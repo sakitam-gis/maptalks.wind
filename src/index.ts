@@ -84,6 +84,9 @@ class WindLayer extends maptalks.CanvasLayer {
     this.renderScene();
   }
 
+  /**
+   * inter
+   */
   drawOnInteracting() {
     this.renderScene();
   }
