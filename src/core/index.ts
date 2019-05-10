@@ -259,6 +259,7 @@ class WindGL {
     // 2、是否逆转矩阵
     // 3、矩阵
     gl.uniformMatrix4fv(program.u_matrix, false, matrix);
+    gl.uniformMatrix4fv(program.u_matrix, false, matrix);
     // gl.uniform4fv(program.u_bbox, this.bbox);
     gl.drawArrays(gl.POINTS, 0, this._numParticles);
   }

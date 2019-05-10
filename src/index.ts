@@ -94,6 +94,7 @@ class WindLayer extends maptalks.CanvasLayer {
     // @ts-ignore
     const map = this.getMap();
     if (!map) return;
+    // const projViewMatrix = map.projViewMatrix.slice();
     const projViewMatrix = map.projViewMatrix.slice();
     // const worldSize = 512 * map.getGLScale();
     // const mercatorMatrix = mat4.scale([], projViewMatrix,
@@ -116,11 +117,8 @@ class WindLayer extends maptalks.CanvasLayer {
 
     if (this.wind) {
       this.wind.prepareToDraw();
-      this.wind.render(JSON.parse('[3770.804809734272,0,0,0,0,' +
-        '-14685.487291460046,0,0,0,0,-4908.288037791965,-4895.162430486682,' +
-        '-2994.5333865497773,5668.44799568952,739.480171471856,739.5]'));
+      this.wind.render(projViewMatrix);
     }
-    console.log(projViewMatrix);
     renderer.completeRender();
   }
 
