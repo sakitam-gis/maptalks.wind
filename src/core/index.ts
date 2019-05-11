@@ -201,20 +201,20 @@ class WindGL {
     this.updateParticles();
   }
 
-  render(matrix: any) {
+  render(matrix: any, dateLineOffset: number) {
     const [gl, windData] = [this.gl, this.windData];
     if (!gl || !windData) return;
-    this.drawScreen(matrix);
+    this.drawScreen(matrix, dateLineOffset);
     // this.drawParticles(matrix);
   }
 
-  drawScreen(matrix: []) {
+  drawScreen(matrix: [], dateLineOffset: number) {
     const gl = this.gl;
     // draw the screen into a temporary framebuffer to retain it as the background on the next frame
     bindFramebuffer(gl, this.framebuffer, this.screenTexture);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     this.drawTexture(this.backgroundTexture, this.fadeOpacity);
-    this.drawParticles(matrix);
+    this.drawParticles(matrix, dateLineOffset);
     bindFramebuffer(gl, null);
     // enable blending to support drawing on top of an existing background (e.g. a map)
     gl.enable(gl.BLEND);
@@ -238,7 +238,7 @@ class WindGL {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
-  drawParticles(matrix: []) {
+  drawParticles(matrix: [], dateLineOffset: number) {
     const gl = this.gl;
     const program = this.drawProgram;
     gl.useProgram(program.program);
@@ -255,10 +255,10 @@ class WindGL {
     gl.uniform1f(program.u_particles_res, this.particleStateResolution);
     gl.uniform2f(program.u_wind_min, this.windData.uMin, this.windData.vMin);
     gl.uniform2f(program.u_wind_max, this.windData.uMax, this.windData.vMax);
+    gl.uniform1f(program.u_dateline_offset, dateLineOffset);
     // 1、要修改的uniform属性的位置的对象
     // 2、是否逆转矩阵
     // 3、矩阵
-    gl.uniformMatrix4fv(program.u_matrix, false, matrix);
     gl.uniformMatrix4fv(program.u_matrix, false, matrix);
     // gl.uniform4fv(program.u_bbox, this.bbox);
     gl.drawArrays(gl.POINTS, 0, this._numParticles);

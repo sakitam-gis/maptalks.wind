@@ -15,8 +15,9 @@
     "build": "rollup -c build/rollup-prod-config.js"
   },
   "dependencies": {
-    "@mapbox/gl-matrix": "^0.0.1",
-    "maptalks": "^0.43.0"
+    "@types/gl-matrix": "^2.4.5",
+    "gl-matrix": "^3.0.0",
+    "maptalks": "^0.44.0"
   },
   "devDependencies": {
     "@babel/core": "^7.3.4",

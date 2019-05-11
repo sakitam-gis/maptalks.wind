@@ -59,7 +59,7 @@ void main() {
     float drop_rate = u_drop_rate + speed_t * u_drop_rate_bump;
     float drop = step(1.0 - drop_rate, rand(seed));
 
-    float retain = step(drop_rate, rand(seed));
+//    float retain = step(drop_rate, rand(seed));
 
     vec2 random_pos = vec2(rand(seed + 1.3), rand(seed + 2.1));
 //    pos = mix(pos, random_pos, 1.0 - retain);

@@ -605,17 +605,21 @@
     reflect-metadata "^0.1.12"
     tslib "^1.8.1"
 
-"@mapbox/gl-matrix@^0.0.1":
-  version "0.0.1"
-  resolved "http://registry.npm.taobao.org/@mapbox/gl-matrix/download/@mapbox/gl-matrix-0.0.1.tgz#e5126aab4d64c36b81c7a97d0ae0dddde5773d2b"
-
 "@maptalks/feature-filter@^1.0.0":
   version "1.0.0"
   resolved "http://registry.npm.taobao.org/@maptalks/feature-filter/download/@maptalks/feature-filter-1.0.0.tgz#bfcc7f705e6de5c6c3d3802a3b5081272c877fc8"
 
+"@maptalks/function-type@^1.1.0":
+  version "1.1.1"
+  resolved "https://registry.npm.taobao.org/@maptalks/function-type/download/@maptalks/function-type-1.1.1.tgz#22d8abf762ac68e18a2e0929712753a083703de1"
+
 "@types/estree@0.0.39":
   version "0.0.39"
   resolved "http://registry.npm.taobao.org/@types/estree/download/@types/estree-0.0.39.tgz#e177e699ee1b8c22d23174caaa7422644389509f"
+
+"@types/gl-matrix@^2.4.5":
+  version "2.4.5"
+  resolved "https://registry.npm.taobao.org/@types/gl-matrix/download/@types/gl-matrix-2.4.5.tgz#80630d88fb74ff8897a2a2855a8a700e6ee19d3e"
 
 "@types/node@*", "@types/node@^11.9.5":
   version "11.11.3"
@@ -1751,6 +1755,10 @@ getpass@^0.1.1:
   dependencies:
     assert-plus "^1.0.0"
 
+gl-matrix@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.npm.taobao.org/gl-matrix/download/gl-matrix-3.0.0.tgz#888301ac7650e148c3865370e13ec66d08a8381f"
+
 glob-base@^0.3.0:
   version "0.3.0"
   resolved "http://registry.npm.taobao.org/glob-base/download/glob-base-0.3.0.tgz#dbb164f6221b1c0b1ccf82aea328b497df0ea3c4"
@@ -2647,11 +2655,12 @@ map-visit@^1.0.0:
   dependencies:
     object-visit "^1.0.0"
 
-maptalks@^0.43.0:
-  version "0.43.0"
-  resolved "http://registry.npm.taobao.org/maptalks/download/maptalks-0.43.0.tgz#84766cbd8d6da50017d0417d10c0ae60ce3a2b9a"
+maptalks@^0.44.0:
+  version "0.44.0"
+  resolved "https://registry.npm.taobao.org/maptalks/download/maptalks-0.44.0.tgz#6e26774e92fa3c792e02cff74cfa13a8b02be2b0"
   dependencies:
     "@maptalks/feature-filter" "^1.0.0"
+    "@maptalks/function-type" "^1.1.0"
     simplify-js "^1.2.1"
     zousan "^2.3.3"
 
