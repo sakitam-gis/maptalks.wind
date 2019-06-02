@@ -17,7 +17,10 @@ describe('indexSpec', () => {
           projection:'EPSG:4326'
         }
       });
-      expect(layer instanceof maptalks.WindLayer).to.be.ok();
+
+      expect(layer).toBeDefined();
+
+      expect(layer instanceof maptalks.WindLayer).toBe(true);
     });
   });
 });

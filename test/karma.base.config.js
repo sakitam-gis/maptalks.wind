@@ -6,7 +6,7 @@ module.exports = function(config) {
   config.set({
 
     // base path that will be used to resolve all patterns (eg. files, exclude)
-    basePath: '.',
+    basePath: '../',
 
 
     // frameworks to use
@@ -17,7 +17,7 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       // '../node_modules/maptalks/**/*.js',
-      { pattern: '../src/**/*.ts' },
+      { pattern: 'src/**/*.ts' },
       // { pattern: '../src/**/*.+(ts|tsx)' },
       // { pattern: '../test/**/*.+(ts|tsx)' },
       { pattern: './spec/**/*.ts' },
@@ -33,9 +33,9 @@ module.exports = function(config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       // '../node_modules/maptalks/**/*.js': ['rollup'],
-      '../src/**/*.ts': ['karma-typescript'],
+      'src/**/*.ts': ['karma-typescript'],
       // '../src/**/*.ts': ['rollup', 'coverage'],
-      '../spec/**/*.ts': ['karma-typescript'],
+      'spec/**/*.ts': ['karma-typescript'],
     },
 
     karmaTypescriptConfig: {
