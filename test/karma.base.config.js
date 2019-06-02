@@ -2,25 +2,26 @@
 // Generated on Sun Jun 02 2019 15:47:55 GMT+0800 (GMT+08:00)
 const baseConfig = require('../build/rollup-base-config');
 
-console.log(baseConfig);
-
 module.exports = function(config) {
   config.set({
 
     // base path that will be used to resolve all patterns (eg. files, exclude)
-    basePath: '',
+    basePath: '.',
 
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['mocha', 'expect', 'jasmine', 'karma-typescript'],
+    frameworks: [/*'mocha', 'expect', */'jasmine', 'karma-typescript'],
 
 
     // list of files / patterns to load in the browser
     files: [
       // '../node_modules/maptalks/**/*.js',
-      // { pattern: '../src/**/!(main)*.+(ts|tsx)' },
-      '../src/**/*.ts', '../test/**/*.ts'
+      { pattern: '../src/**/*.ts' },
+      // { pattern: '../src/**/*.+(ts|tsx)' },
+      // { pattern: '../test/**/*.+(ts|tsx)' },
+      { pattern: './spec/**/*.ts' },
+      // '../src/**/*.ts', '../test/**/*.ts'
     ],
 
 
@@ -31,10 +32,44 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      '../node_modules/maptalks/**/*.js': ['rollup'],
-      // '../src/**/!(main)*.+(ts|tsx)': ['karma-typescript'],
-      '../src/**/*.ts': ['rollup', 'coverage'],
-      // '../test/**/*.ts': ['karma-typescript'],
+      // '../node_modules/maptalks/**/*.js': ['rollup'],
+      '../src/**/*.ts': ['karma-typescript'],
+      // '../src/**/*.ts': ['rollup', 'coverage'],
+      '../spec/**/*.ts': ['karma-typescript'],
+    },
+
+    karmaTypescriptConfig: {
+      bundlerOptions: {
+        entrypoints: /\.spec\.ts$/,
+        // needed for importing es6 modules from npm packages
+        transforms: [require('karma-typescript-es6-transform')()],
+
+      },
+      compilerOptions: {
+        // karma doesn't like es6 modules, so we compile to commonjs
+        module: 'commonjs'
+      },
+      coverageOptions: {
+        exclude: [
+          // we don't cover declaration or test files
+          /\.(d|spec|test)\.ts/i,
+          // we don't want to cover barrel files
+          // /index.ts/
+        ],
+      },
+      reports: {
+        'html': {
+          directory: 'coverage',
+          subdirectory: () => ''
+        },
+        'lcovonly': {
+          directory: 'coverage',
+          subdirectory: () => '',
+          filename: 'lcov.info'
+        },
+        'text': null
+      },
+      tsconfig: '../tsconfig.test.json'
     },
 
     // karmaTypescriptConfig: {
@@ -53,31 +88,31 @@ module.exports = function(config) {
     //   },
     // },
 
-    rollupPreprocessor: Object.assign(baseConfig, {
-      output: {
-        file: 'maptalks.wind.js',
-        format: 'umd',
-        name: 'maptalks',
-        extend: true,
-        globals: {
-          'maptalks': 'maptalks'
-        }
-      },
-    }),
+    // rollupPreprocessor: Object.assign(baseConfig, {
+    //   output: {
+    //     file: 'maptalks.wind.js',
+    //     format: 'umd',
+    //     name: 'maptalks',
+    //     extend: true,
+    //     globals: {
+    //       'maptalks': 'maptalks'
+    //     }
+    //   },
+    // }),
 
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    // reporters: ['progress', 'coverage', 'karma-typescript'],
-    reporters: ['progress', 'coverage'],
-    coverageReporter: {
-      type: 'html',
-      dir: 'coverage/',
-      instrumenterOptions: {
-        istanbul: { noCompact: true }
-      }
-    },
+    reporters: ['mocha', 'karma-typescript'],
+    // reporters: ['progress', 'coverage'],
+    // coverageReporter: {
+    //   type: 'html',
+    //   dir: 'coverage/',
+    //   instrumenterOptions: {
+    //     istanbul: { noCompact: true }
+    //   }
+    // },
 
 
     // web server port
@@ -97,9 +132,17 @@ module.exports = function(config) {
     autoWatch: true,
 
 
-    // start these browsers
+    // start these browsers ChromeHeadless
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
     browsers: ['Chrome'],
+
+    // customLaunchers: {
+    //   ChromeDebug: {
+    //     base: 'Chrome',
+    //     flags: ['--remote-debugging-port=9222'],
+    //     debug: true
+    //   }
+    // },
 
     // How long does Karma wait for a browser to reconnect (in ms).
     browserDisconnectTimeout: 5000,

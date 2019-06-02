@@ -1,3 +1,6 @@
+// @ts-ignore
+import * as maptalks from 'maptalks';
+
 describe('indexSpec', () => {
   beforeEach(function () {
   });
