@@ -211,15 +211,19 @@ class WindGL {
   drawScreen(matrix: [], dateLineOffset: number) {
     const gl = this.gl;
     // draw the screen into a temporary framebuffer to retain it as the background on the next frame
-    bindFramebuffer(gl, this.framebuffer, this.screenTexture);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    bindFramebuffer(gl, this.framebuffer, this.screenTexture);
+
     this.drawTexture(this.backgroundTexture, this.fadeOpacity);
-    this.drawParticles(matrix, dateLineOffset);
     bindFramebuffer(gl, null);
     // enable blending to support drawing on top of an existing background (e.g. a map)
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    this.drawTexture(this.screenTexture, 1.0);
+    // 非预乘阿尔法
+    // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    // 预乘阿尔法通道
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    this.drawParticles(matrix, dateLineOffset);
+    this.drawTexture(this.screenTexture, this.fadeOpacity);
     gl.disable(gl.BLEND);
     // save the current screen as the background for the next frame
     const temp = this.backgroundTexture;
@@ -252,6 +256,7 @@ class WindGL {
     gl.uniform1i(program.u_wind, 0);
     gl.uniform1i(program.u_particles, 1);
     gl.uniform1i(program.u_color_ramp, 2);
+
     gl.uniform1f(program.u_particles_res, this.particleStateResolution);
     gl.uniform2f(program.u_wind_min, this.windData.uMin, this.windData.vMin);
     gl.uniform2f(program.u_wind_max, this.windData.uMax, this.windData.vMax);
@@ -269,8 +274,10 @@ class WindGL {
 
     const blendingEnabled = gl.isEnabled(gl.BLEND);
     gl.disable(gl.BLEND);
+
     bindFramebuffer(gl, this.framebuffer, this.particleStateTexture1);
     gl.viewport(0, 0, this.particleStateResolution, this.particleStateResolution);
+
     const program = this.updateProgram;
     gl.useProgram(program.program);
 

@@ -119,16 +119,16 @@ class WindLayer extends maptalks.CanvasLayer {
 
     if (this.wind) {
       this.wind.prepareToDraw();
-      // const bounds = map.getExtent();
-      // const eastIter = Math.max(0, Math.ceil((bounds.xmax - 180) / 360));
-      // const westIter = Math.max(0, Math.ceil((bounds.xmin + 180) / -360));
+      const bounds = map.getExtent();
+      const eastIter = Math.max(0, Math.ceil((bounds.xmax - 180) / 360));
+      const westIter = Math.max(0, Math.ceil((bounds.xmin + 180) / -360));
       this.wind.render(mercatorMatrix, 0);
-      // for (let i = 1; i <= eastIter; i++) {
-      //   this.wind.render(mercatorMatrix, i);
-      // }
-      // for (let i = 1; i <= westIter; i++) {
-      //   this.wind.render(mercatorMatrix, -i);
-      // }
+      for (let i = 1; i <= eastIter; i++) {
+        this.wind.render(mercatorMatrix, i);
+      }
+      for (let i = 1; i <= westIter; i++) {
+        this.wind.render(mercatorMatrix, -i);
+      }
     }
     renderer.completeRender();
   }
