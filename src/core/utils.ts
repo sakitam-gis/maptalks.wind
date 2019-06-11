@@ -22,12 +22,14 @@ function createProgram(gl: WebGLRenderingContext, vertexSource: string, fragment
     program,
   };
   const numAttributes = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
+  // tslint:disable-next-line:no-increment-decrement
   for (let i = 0; i < numAttributes; i++) {
     // @ts-ignore
     const attribute: WebGLActiveInfo = gl.getActiveAttrib(program, i);
     wrapper[attribute.name] = gl.getAttribLocation(program, attribute.name);
   }
   const numUniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+  // tslint:disable-next-line:no-increment-decrement
   for (let i = 0; i < numUniforms; i++) {
     // @ts-ignore
     const uniform: WebGLActiveInfo = gl.getActiveUniform(program, i);
@@ -37,7 +39,11 @@ function createProgram(gl: WebGLRenderingContext, vertexSource: string, fragment
 }
 
 function createTexture(
-  gl: WebGLRenderingContext, filter: GLint, data: Uint8Array, width?: number, height?: number,
+  gl: WebGLRenderingContext,
+  filter: GLint,
+  data: Uint8Array,
+  width?: number,
+  height?: number,
 ): WebGLTexture | null {
   const texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, texture);

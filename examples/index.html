@@ -43,16 +43,11 @@
     // zoom: 15,
     // bearing: -20,
     // pitch: 45,
+    hitDetect: false,
     centerCross: true,
-    spatialReference:{
-      projection:'EPSG:3857'
-    },
     baseLayer: new maptalks.TileLayer('tile', {
       'urlTemplate': 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png',
       'subdomains': ['a', 'b', 'c', 'd'],
-      spatialReference:{
-        projection:'EPSG:3857'
-      }
     })
   });
 
@@ -60,7 +55,7 @@
     animation: true,
     renderer: 'webgl',
     spatialReference:{
-      projection:'EPSG:3857'
+      projection:'EPSG:4326'
     }
   });
 

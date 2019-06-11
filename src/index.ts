@@ -1,7 +1,7 @@
 // @ts-ignore
 import * as maptalks from 'maptalks';
 // @ts-ignore
-import {mat4} from 'gl-matrix';
+import { mat4 } from 'gl-matrix';
 // @ts-ignore
 // import WebMercatorViewport from 'viewport-mercator-project';
 import WindGL from './core/index';
@@ -111,7 +111,7 @@ class WindLayer extends maptalks.CanvasLayer {
   }
 
   project(lnglat: any, worldSize: number) {
-    const lat = clamp(lnglat.y, -85.051129, 85.051129);
+    const lat = clamp(lnglat.y, -90, 90);
     return new maptalks.Point(
       mercatorXfromLng(lnglat.x) * worldSize,
       mercatorYfromLat(lat) * worldSize);
@@ -124,9 +124,9 @@ class WindLayer extends maptalks.CanvasLayer {
     const bearing = map.getBearing();
     const fov = map.getFov() * Math.PI / 180; // 0.6435011087932844
     const { width, height } = size;
-    const scale = Math.pow(2, zoom - 1);
-    const pitch = clamp(p, 0, 60) / 180 * Math.PI;
+    const pitch = clamp(p, 0, 85) / 180 * Math.PI;
     const angle = -wrap(bearing, -180, 180) * Math.PI / 180;
+    const scale = Math.pow(2, zoom - 1);
 
     const worldSize = 512 * scale;
 
@@ -167,10 +167,34 @@ class WindLayer extends maptalks.CanvasLayer {
     return mat4.scale([], m, [worldSize, worldSize, worldSize]);
   }
 
+  // calcLayerMatrices(map: any) {
+  //   const size = map.getSize();
+  //   const scale = map.getGLScale();
+  //
+  //   const worldSize = 512 * scale;
+  //   // const center = map._prjToPoint(map._getPrjCenter(), map.getMaxZoom());
+  //   const fov = map.getFov() * Math.PI / 180;
+  //   const cameraToCenterDistance = 0.5 / Math.tan(fov / 2) * size.height * scale;
+  //   const center = this.project(map.getCenter(), worldSize);
+  //   const x = center.x;
+  //   const y = center.y;
+  //
+  //   const m = mat4.create();
+  //   mat4.perspective(m, fov, size.width / size.height, 1, cameraToCenterDistance + 1E9);
+  //   mat4.scale(m, m, [1, -1, 1]);
+  //   mat4.translate(m, m, [0, 0, -cameraToCenterDistance]);
+  //   mat4.rotateX(m, m, map.getPitch() * Math.PI / 180);
+  //   mat4.rotateZ(m, m, -map.getBearing() * Math.PI / 180);
+  //   mat4.translate(m, m, [-x, -y, 0]);
+  //
+  //   return mat4.scale([], m, [worldSize, worldSize, worldSize]);
+  // }
+
   renderScene() {
     // @ts-ignore
     const map = this.getMap();
     if (!map) return;
+    // const mercatorMatrix = this.calcLayerMatrices(map);
     const mercatorMatrix = this.calcMatrices(map);
     // @ts-ignore
     const renderer = this._getRenderer();
@@ -189,9 +213,24 @@ class WindLayer extends maptalks.CanvasLayer {
     }
 
     if (this.wind) {
-      this.wind.prepareToDraw();
-      this.wind.render(mercatorMatrix);
+      this.wind.render(mercatorMatrix, 0);
+      // from https://github.com/astrosat/windgl/blob/3ad0ae3bdd/src/layer.js#L157
+      // const extent = map.getExtent();
+      // const min = extent.getMin();
+      // const max = extent.getMax();
+      // const eastIter = Math.max(0, Math.ceil((max.x - 180) / 360));
+      // const westIter = Math.max(0, Math.ceil((min.x + 180) / -360));
+      // this.wind.render(mercatorMatrix, 0);
+      // // tslint:disable-next-line:no-increment-decrement
+      // for (let i = 1; i <= eastIter; i++) {
+      //   this.wind.render(mercatorMatrix, i);
+      // }
+      // // tslint:disable-next-line:no-increment-decrement
+      // for (let i = 1; i <= westIter; i++) {
+      //   this.wind.render(mercatorMatrix, -i);
+      // }
     }
+
     renderer.completeRender();
   }
 
