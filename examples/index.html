@@ -37,19 +37,17 @@
   }
 
   var map = new maptalks.Map('map', {
-    // center: [108.93, 34.27],
-    center: [0, 0],
-    zoom: 4,
+    center: [108.93, 34.27],
+    zoom: 2,
+    // center: [-74.012, 40.705],
+    // zoom: 15,
+    // bearing: -20,
+    // pitch: 45,
+    hitDetect: false,
     centerCross: true,
-    spatialReference:{
-      projection:'EPSG:4326'
-    },
     baseLayer: new maptalks.TileLayer('tile', {
       'urlTemplate': 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png',
       'subdomains': ['a', 'b', 'c', 'd'],
-      spatialReference:{
-        projection:'EPSG:3857'
-      }
     })
   });
 
