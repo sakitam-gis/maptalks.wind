@@ -1,4 +1,3 @@
-// @ts-ignore
 import * as maptalks from 'maptalks';
 import { mat4 } from 'gl-matrix';
 import WindGL from './core/index';
@@ -163,6 +162,29 @@ class WindLayer extends maptalks.CanvasLayer {
     // mat4.scale(m, m, [1, 1, mercatorZfromAltitude(1, this.center.lat) * this.worldSize, 1]);
     return mat4.scale([], m, [worldSize, worldSize, worldSize]);
   }
+
+  // calcLayerMatrices(map: any) {
+  //   const size = map.getSize();
+  //   const scale = map.getGLScale();
+  //
+  //   const worldSize = 512 * scale;
+  //   // const center = map._prjToPoint(map._getPrjCenter(), map.getMaxZoom());
+  //   const fov = map.getFov() * Math.PI / 180;
+  //   const cameraToCenterDistance = 0.5 / Math.tan(fov / 2) * size.height * scale;
+  //   const center = this.project(map.getCenter(), worldSize);
+  //   const x = center.x;
+  //   const y = center.y;
+  //
+  //   const m = mat4.create();
+  //   mat4.perspective(m, fov, size.width / size.height, 1, cameraToCenterDistance + 1E9);
+  //   mat4.scale(m, m, [1, -1, 1]);
+  //   mat4.translate(m, m, [0, 0, -cameraToCenterDistance]);
+  //   mat4.rotateX(m, m, map.getPitch() * Math.PI / 180);
+  //   mat4.rotateZ(m, m, -map.getBearing() * Math.PI / 180);
+  //   mat4.translate(m, m, [-x, -y, 0]);
+  //
+  //   return mat4.scale([], m, [worldSize, worldSize, worldSize]);
+  // }
 
   renderScene() {
     // @ts-ignore

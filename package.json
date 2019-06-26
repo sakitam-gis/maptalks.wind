@@ -16,9 +16,9 @@
     "karma.test": "karma start test/karma.base.config.js"
   },
   "dependencies": {
-    "@types/gl-matrix": "^2.4.5",
-    "gl-matrix": "^3.0.0",
-    "maptalks": "^0.44.0"
+    "maptalks": "^0.43.0",
+    "math.gl": "^2.3.3",
+    "gl-matrix": "^3.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.3.4",

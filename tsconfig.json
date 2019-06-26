@@ -2,8 +2,11 @@
   "compilerOptions": {
     "paths": {
       "*": [
-        "types/*"
-      ]
+        "types/*",
+        "typings/*"
+      ],
+      "gl-matrix": ["node_modules/gl-matrix/esm/index.js"],
+      "maptalks": ["node_modules/maptalks/dist/maptalks.es.js"]
     },
     "baseUrl": ".",
     "esModuleInterop": true,
@@ -13,7 +16,8 @@
     "noUnusedParameters": true,
     "noUnusedLocals": true,
     "noImplicitAny": true,
-    "declaration": true,
+    "declaration": false,
+    "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "outDir": "dist",
     "declarationDir": "types",

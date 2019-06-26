@@ -8,15 +8,10 @@ import {
   bindAttribute,
   bindFramebuffer,
 } from './utils';
-// @ts-ignore
 import drawVert from '../shaders/draw.vertex.glsl';
-// @ts-ignore
 import drawFrag from '../shaders/draw.fragment.glsl';
-// @ts-ignore
 import quadVert from '../shaders/quad.vertex.glsl';
-// @ts-ignore
 import screenFrag from '../shaders/screen.fragment.glsl';
-// @ts-ignore
 import updateFrag from '../shaders/update.fragment.glsl';
 
 function getColorRamp(colors: {}) {
@@ -92,11 +87,6 @@ class WindGL {
   public speedFactor: number;
   public dropRate: number;
   public dropRateBump: number;
-  public drawProgram: any;
-  public screenProgram: any;
-  public updateProgram: any;
-  public quadBuffer: WebGLBuffer|null;
-  public framebuffer: WebGLFramebuffer|null;
   public windData: {
     source: string;
     date: Date;
@@ -107,14 +97,18 @@ class WindGL {
     vMin: number;
     vMax: number;
   };
+  public _numParticles: number;
   public options: optionsTypes;
+  private drawProgram: any;
+  private screenProgram: any;
+  private updateProgram: any;
+  private quadBuffer: WebGLBuffer|null;
+  private framebuffer: WebGLFramebuffer|null;
+
   private screenTexture: WebGLTexture|null;
   private colorRampTexture: WebGLTexture|null;
   private backgroundTexture: WebGLTexture|null;
-
-  public _numParticles: number;
   private particleStateResolution: number;
-
   private particleIndexBuffer: WebGLBuffer|null;
   private particleStateTexture1: WebGLTexture|null;
   private particleStateTexture0: WebGLTexture|null;
@@ -124,7 +118,6 @@ class WindGL {
     const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles } = options;
     this.options = options;
     this.gl = gl;
-
     this.fadeOpacity = fadeOpacity || 0.996; // how fast the particle trails fade on each frame
     this.speedFactor = speedFactor || 0.25; // how fast the particles move
     this.dropRate = dropRate || 0.003; // how often the particles move to a random place
@@ -132,12 +125,12 @@ class WindGL {
     this.dropRateBump = dropRateBump || 0.01;
     // this.numParticles = numParticles || 65536;
 
-    this.drawProgram = null;
-    this.screenProgram = null;
-    this.updateProgram = null;
+    this.drawProgram = createProgram(gl, drawVert, drawFrag);
+    this.screenProgram = createProgram(gl, quadVert, screenFrag);
+    this.updateProgram = createProgram(gl, quadVert, updateFrag);
 
-    this.quadBuffer = null;
-    this.framebuffer = null;
+    this.quadBuffer = createBuffer(gl, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]));
+    this.framebuffer = gl.createFramebuffer();
     // @ts-ignore
     this.windData = {};
 
@@ -153,21 +146,11 @@ class WindGL {
 
     this.windTexture = null;
 
-    this.resize();
-    this.initialize(gl, colorRamp, numParticles);
-  }
-
-  initialize(gl: WebGLRenderingContext, colorRamp: object | undefined, numParticles: number | undefined) {
-    this.drawProgram = createProgram(gl, drawVert, drawFrag);
-    this.updateProgram = createProgram(gl, quadVert, updateFrag);
-
-    this.screenProgram = createProgram(gl, quadVert, screenFrag);
-
-    this.quadBuffer = createBuffer(gl, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]));
-    this.framebuffer = gl.createFramebuffer();
+    this.matrix = [];
 
     this.setColorRamp(colorRamp || defaultRampColors);
     this.numParticles = numParticles || 65536;
+    this.resize();
   }
 
   setOptions(options: optionsTypes) {
@@ -286,7 +269,6 @@ class WindGL {
     gl.uniform1i(program.u_wind, 0);
     gl.uniform1i(program.u_particles, 1);
     gl.uniform1i(program.u_color_ramp, 2);
-
     gl.uniform1f(program.u_particles_res, this.particleStateResolution);
     gl.uniform2f(program.u_wind_min, this.windData.uMin, this.windData.vMin);
     gl.uniform2f(program.u_wind_max, this.windData.uMax, this.windData.vMax);
