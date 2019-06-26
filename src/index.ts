@@ -1,9 +1,5 @@
-// @ts-ignore
 import * as maptalks from 'maptalks';
-// @ts-ignore
 import { mat4 } from 'gl-matrix';
-// @ts-ignore
-// import WebMercatorViewport from 'viewport-mercator-project';
 import WindGL from './core/index';
 import Renderer from './render/renderer';
 
@@ -213,22 +209,22 @@ class WindLayer extends maptalks.CanvasLayer {
     }
 
     if (this.wind) {
-      this.wind.render(mercatorMatrix, 0);
-      // from https://github.com/astrosat/windgl/blob/3ad0ae3bdd/src/layer.js#L157
-      // const extent = map.getExtent();
-      // const min = extent.getMin();
-      // const max = extent.getMax();
-      // const eastIter = Math.max(0, Math.ceil((max.x - 180) / 360));
-      // const westIter = Math.max(0, Math.ceil((min.x + 180) / -360));
       // this.wind.render(mercatorMatrix, 0);
-      // // tslint:disable-next-line:no-increment-decrement
-      // for (let i = 1; i <= eastIter; i++) {
-      //   this.wind.render(mercatorMatrix, i);
-      // }
-      // // tslint:disable-next-line:no-increment-decrement
-      // for (let i = 1; i <= westIter; i++) {
-      //   this.wind.render(mercatorMatrix, -i);
-      // }
+      // from https://github.com/astrosat/windgl/blob/3ad0ae3bdd/src/layer.js#L157
+      const extent = map.getExtent();
+      const min = extent.getMin();
+      const max = extent.getMax();
+      const eastIter = Math.max(0, Math.ceil((max.x - 180) / 360));
+      const westIter = Math.max(0, Math.ceil((min.x + 180) / -360));
+      this.wind.render(mercatorMatrix, 0);
+      // tslint:disable-next-line:no-increment-decrement
+      for (let i = 1; i <= eastIter; i++) {
+        this.wind.render(mercatorMatrix, i);
+      }
+      // tslint:disable-next-line:no-increment-decrement
+      for (let i = 1; i <= westIter; i++) {
+        this.wind.render(mercatorMatrix, -i);
+      }
     }
 
     renderer.completeRender();

@@ -8,15 +8,10 @@ import {
   bindAttribute,
   bindFramebuffer,
 } from './utils';
-// @ts-ignore
 import drawVert from '../shaders/draw.vertex.glsl';
-// @ts-ignore
 import drawFrag from '../shaders/draw.fragment.glsl';
-// @ts-ignore
 import quadVert from '../shaders/quad.vertex.glsl';
-// @ts-ignore
 import screenFrag from '../shaders/screen.fragment.glsl';
-// @ts-ignore
 import updateFrag from '../shaders/update.fragment.glsl';
 
 function getColorRamp(colors: {}) {
