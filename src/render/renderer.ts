@@ -2,8 +2,6 @@
 import * as maptalks from 'maptalks';
 import { createCanvas, createContext } from '../utils';
 
-const retina = maptalks.Browser.retina ? 2 : 1;
-
 class Renderer extends maptalks.renderer.CanvasLayerRenderer {
   private _drawContext: any;
   private canvas: HTMLCanvasElement | undefined;
@@ -11,12 +9,49 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
   private layer: any;
   private context: CanvasRenderingContext2D | null | undefined;
   private gl: WebGLRenderingContext | undefined | null;
+  checkResources() {
+    return [];
+  }
+
+  getDrawParams() {
+    return [];
+  }
+
   draw() {
     this.prepareCanvas();
-    // @ts-ignore
     this.prepareDrawContext();
-    // @ts-ignore
     this._drawLayer();
+  }
+
+  prepareDrawContext() {
+    super.prepareDrawContext();
+  }
+
+  // tslint:disable-next-line:function-name
+  _drawLayer() {
+    const args = this._prepareDrawParams();
+    if (!args) {
+      return;
+    }
+    this.layer.draw.apply(this.layer, args);
+    this.completeRender();
+  }
+
+  // tslint:disable-next-line:function-name
+  _prepareDrawParams() {
+    if (!this.getMap()) {
+      return null;
+    }
+    const view = this.getViewExtent();
+    if (view['maskExtent'] && !view['extent'].intersects(view['maskExtent'])) {
+      this.completeRender();
+      return null;
+    }
+    const args = [this.gl, view];
+    const params = this.getDrawParams();
+    args.push.apply(args, params ? (Array.isArray(params) ? params : [params]) : []);
+    args.push.apply(args, this._drawContext);
+    return args;
   }
 
   /**
@@ -24,9 +59,8 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
    * @returns {*}
    */
   needToRedraw() {
-    const map = this.getMap();
-    if (map.isZooming() && !map.getPitch()) {
-      return false;
+    if (this.layer.options['animation']) {
+      return true;
     }
     return super.needToRedraw();
   }
@@ -36,6 +70,8 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
    */
   onCanvasCreate() {
     if (this.canvas && this.layer.options.doubleBuffer) {
+      const map = this.getMap();
+      const retina = map.getDevicePixelRatio();
       this.buffer = createCanvas(
         this.canvas.width, this.canvas.height, retina, this.getMap().CanvasClass,
       );
@@ -50,10 +86,12 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
     if (!this.canvas) {
       const map = this.getMap();
       const size = map.getSize();
+      const retina = map.getDevicePixelRatio();
       const [width, height] = [retina * size.width, retina * size.height];
       this.canvas = createCanvas(width, height, retina, map.CanvasClass);
       this.gl = createContext(this.canvas, this.layer.options.glOptions);
       this.onCanvasCreate();
+      this.layer.onCanvasCreate(this.context, this.gl);
       this.layer.fire('canvascreate', { context: this.context, gl: this.gl });
     }
   }
@@ -64,7 +102,9 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
    */
   resizeCanvas(canvasSize: any) {
     if (this.canvas && this.gl) {
-      const size = canvasSize || this.getMap().getSize();
+      const map = this.getMap();
+      const retina = map.getDevicePixelRatio();
+      const size = canvasSize || map.getSize();
       this.canvas.height = retina * size.height;
       this.canvas.width = retina * size.width;
       this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
@@ -86,12 +126,21 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
   prepareCanvas() {
     if (!this.canvas) {
       this.createCanvas();
+      // this.createContext();
     } else {
       this.clearCanvas();
     }
     const mask = super.prepareCanvas();
     this.layer.fire('renderstart', { context: this.context, gl: this.gl });
     return mask;
+  }
+
+  renderScene() {
+    this.completeRender();
+  }
+
+  drawOnInteracting() {
+    this.draw();
   }
 
   onZoomStart(...args: any[]) {

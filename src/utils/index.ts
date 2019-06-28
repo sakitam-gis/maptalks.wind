@@ -1,48 +1,10 @@
-
-// https://www.w3.org/TR/compositing/#porterduffcompositingoperators
-function setupBlend(gl: WebGLRenderingContext, compOp: string) {
-  switch (compOp) {
-    case 'source-over':
-      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-      break;
-    case 'destination-over':
-      gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ONE);
-      break;
-    case 'source-in':
-      gl.blendFunc(gl.DST_ALPHA, gl.ZERO);
-      break;
-    case 'destination-in':
-      gl.blendFunc(gl.ZERO, gl.SRC_ALPHA);
-      break;
-    case 'source-out':
-      gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ZERO);
-      break;
-    case 'destination-out':
-      gl.blendFunc(gl.ZERO, gl.ONE_MINUS_SRC_ALPHA);
-      break;
-    case 'source-atop':
-      gl.blendFunc(gl.DST_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-      break;
-    case 'destination-atop':
-      gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.SRC_ALPHA);
-      break;
-    case 'xor':
-      gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-      break;
-    case 'lighter':
-      gl.blendFunc(gl.ONE, gl.ONE);
-      break;
-    case 'copy':
-      gl.blendFunc(gl.ONE, gl.ZERO);
-      break;
-    case 'destination':
-      gl.blendFunc(gl.ZERO, gl.ONE);
-      break;
-    default:
-      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-      break;
-  }
-}
+const CONTEXT_TYPES = [
+  'webgl2',
+  'experimental-webgl',
+  'webgl',
+  'webkit-3d',
+  'moz-webgl',
+];
 
 /**
  * core create canvas
@@ -67,14 +29,6 @@ const createCanvas = (width: number, height: number, scaleFactor: number, Canvas
 };
 
 /**
- * handle webgl content error
- * @param error
- */
-function onContextCreationError(error: any) {
-  console.log(error.statusMessage);
-}
-
-/**
  * 创建图形绘制上下文
  * @param canvas
  * @param glOptions
@@ -82,31 +36,21 @@ function onContextCreationError(error: any) {
  */
 const createContext = (canvas: HTMLCanvasElement, glOptions = {}): WebGLRenderingContext | null => {
   if (!canvas) {
-    // @ts-ignore
-    return;
+    return null;
   }
-  let context: WebGLRenderingContext | null = null;
-  canvas.addEventListener('webglcontextcreationerror', onContextCreationError, false);
-  // @ts-ignore
-  context = canvas.getContext('webgl2', glOptions);
-  // @ts-ignore
-  context = context || canvas.getContext('experimental-webgl2', glOptions);
-  if (!context) {
-    // @ts-ignore
-    context = canvas.getContext('webgl', glOptions);
-    // @ts-ignore
-    context = context || canvas.getContext('experimental-webgl', glOptions);
+  const ii = CONTEXT_TYPES.length;
+  for (let i = 0; i < ii; ++i) {
+    try {
+      const context = canvas.getContext(CONTEXT_TYPES[i], glOptions);
+      if (context) {
+        // @ts-ignore
+        return context;
+      }
+    } catch (e) {
+      console.log(e);
+    }
   }
-  canvas.removeEventListener('webglcontextcreationerror', onContextCreationError, false);
-  if (context) {
-    context.clearColor(0.0, 0.0, 0.0, 0.0);
-    context.enable(context.BLEND);
-    // @ts-ignore
-    const compOp = glOptions.globalCompositeOperation || 'source-over';
-    setupBlend(context, compOp);
-    context.disable(context.DEPTH_TEST);
-  }
-  return context;
+  return null;
 };
 
 export {
