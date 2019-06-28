@@ -24,6 +24,7 @@ export function wrap(n: number, min: number, max: number): number {
 export function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
+
 export function mercatorXfromLng(lng: number) {
   return (180 + lng) / 360;
 }
@@ -56,6 +57,13 @@ class WindLayer extends maptalks.CanvasLayer {
      * @type {null}
      */
     this.wind = null;
+  }
+
+  setOptions(options = {}) {
+    this.options = Object.assign(this.options, options);
+    if (this.wind) {
+      this.wind.setOptions(this.options);
+    }
   }
 
   /**
@@ -219,7 +227,6 @@ class WindLayer extends maptalks.CanvasLayer {
   }
 }
 
-// @ts-ignore
 WindLayer.registerRenderer('webgl', Renderer);
 
 export {
