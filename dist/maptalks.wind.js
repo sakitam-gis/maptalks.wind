@@ -1,7 +1,7 @@
 /*!
  * author: sakitam-fdd <smilefdd@gmail.com> 
  * maptalks.wind v0.0.1
- * build-time: 2019-6-28 18:2
+ * build-time: 2019-6-28 22:34
  * LICENSE: MIT
  * (c) 2018-2019 
  */
@@ -963,7 +963,7 @@
     };
     var WindGL = (function () {
         function WindGL(gl, options) {
-            var fadeOpacity = options.fadeOpacity, speedFactor = options.speedFactor, dropRate = options.dropRate, dropRateBump = options.dropRateBump, colorRamp = options.colorRamp, numParticles = options.numParticles;
+            var fadeOpacity = options.fadeOpacity, speedFactor = options.speedFactor, dropRate = options.dropRate, dropRateBump = options.dropRateBump, colorRamp = options.colorRamp, numParticles = options.numParticles, composite = options.composite;
             this.options = options;
             this.gl = gl;
             this.fadeOpacity = fadeOpacity || 0.996;
@@ -985,6 +985,7 @@
             this.particleStateTexture0 = null;
             this.particleStateTexture1 = null;
             this.windTexture = null;
+            this.composite = composite;
             this.matrix = [];
             this.setColorRamp(colorRamp || defaultRampColors);
             this.numParticles = numParticles || 65536;
@@ -1015,13 +1016,14 @@
             configurable: true
         });
         WindGL.prototype.setOptions = function (options) {
-            var fadeOpacity = options.fadeOpacity, speedFactor = options.speedFactor, dropRate = options.dropRate, dropRateBump = options.dropRateBump, colorRamp = options.colorRamp, numParticles = options.numParticles;
+            var fadeOpacity = options.fadeOpacity, speedFactor = options.speedFactor, dropRate = options.dropRate, dropRateBump = options.dropRateBump, colorRamp = options.colorRamp, numParticles = options.numParticles, composite = options.composite;
             this.fadeOpacity = fadeOpacity || 0.996;
             this.speedFactor = speedFactor || 0.25;
             this.dropRate = dropRate || 0.003;
             this.dropRateBump = dropRateBump || 0.01;
             this.setColorRamp(colorRamp || defaultRampColors);
             this.numParticles = numParticles || 65536;
+            this.composite = composite;
         };
         WindGL.prototype.resize = function () {
             var gl = this.gl;
@@ -1057,18 +1059,17 @@
         };
         WindGL.prototype.drawScreen = function (matrix, dateLineOffset) {
             var gl = this.gl;
-            var composite = this.options.composite;
             bindFramebuffer(gl, this.framebuffer, this.screenTexture);
             gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
             this.drawTexture(this.backgroundTexture, this.fadeOpacity);
-            if (composite) {
+            if (this.composite) {
                 this.drawParticles(matrix, dateLineOffset);
             }
             bindFramebuffer(gl, null);
             gl.enable(gl.BLEND);
             this.drawParticles(matrix, dateLineOffset);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-            if (!composite) {
+            if (!this.composite) {
                 this.drawParticles(matrix, dateLineOffset);
             }
             this.drawTexture(this.screenTexture, 1.0);
@@ -1178,6 +1179,9 @@
         Renderer.prototype.getDrawParams = function () {
             return [];
         };
+        Renderer.prototype.hitDetect = function () {
+            return false;
+        };
         Renderer.prototype.draw = function () {
             this.prepareCanvas();
             this.prepareDrawContext();
@@ -1215,13 +1219,11 @@
             }
             return _super.prototype.needToRedraw.call(this);
         };
-        Renderer.prototype.onCanvasCreate = function () {
-            if (this.canvas && this.layer.options.doubleBuffer) {
-                var map = this.getMap();
-                var retina = map.getDevicePixelRatio();
-                this.buffer = createCanvas(this.canvas.width, this.canvas.height, retina, this.getMap().CanvasClass);
-                this.context = this.buffer.getContext('2d');
+        Renderer.prototype.createContext = function () {
+            if (this.gl && this.gl.canvas === this.canvas || this.context) {
+                return;
             }
+            this.gl = createContext(this.canvas, this.layer.options.glOptions);
         };
         Renderer.prototype.createCanvas = function () {
             if (!this.canvas) {
@@ -1230,9 +1232,6 @@
                 var retina = map.getDevicePixelRatio();
                 var _a = [retina * size.width, retina * size.height], width = _a[0], height = _a[1];
                 this.canvas = createCanvas(width, height, retina, map.CanvasClass);
-                this.gl = createContext(this.canvas, this.layer.options.glOptions);
-                this.onCanvasCreate();
-                this.layer.onCanvasCreate(this.context, this.gl);
                 this.layer.fire('canvascreate', { context: this.context, gl: this.gl });
             }
         };
@@ -1247,23 +1246,19 @@
             }
         };
         Renderer.prototype.clearCanvas = function () {
-            if (this.canvas && this.gl) {
-                this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-                if (this.context) {
-                    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                }
-            }
+            if (this.canvas && this.gl) ;
+            _super.prototype.clearCanvas.call(this);
         };
         Renderer.prototype.prepareCanvas = function () {
             if (!this.canvas) {
                 this.createCanvas();
+                this.createContext();
             }
             else {
                 this.clearCanvas();
+                this.resizeCanvas();
             }
-            var mask = _super.prototype.prepareCanvas.call(this);
-            this.layer.fire('renderstart', { context: this.context, gl: this.gl });
-            return mask;
+            return _super.prototype.prepareCanvas.call(this);
         };
         Renderer.prototype.renderScene = function () {
             this.completeRender();
@@ -1294,13 +1289,13 @@
         };
         return Renderer;
     }(maptalks.renderer.CanvasLayerRenderer));
-    //# sourceMappingURL=renderer.js.map
 
     var _options = {
         renderer: 'webgl',
-        doubleBuffer: true,
         animation: true,
-        glOptions: {},
+        glOptions: {
+            preserveDrawingBuffer: true,
+        },
     };
     function wrap(n, min, max) {
         var d = max - min;
@@ -1353,11 +1348,7 @@
                 if (!ctx)
                     return;
                 var _a = this.options, fadeOpacity = _a.fadeOpacity, speedFactor = _a.speedFactor, dropRate = _a.dropRate, dropRateBump = _a.dropRateBump, colorRamp = _a.colorRamp, numParticles = _a.numParticles, composite = _a.composite;
-                var container = document.getElementById('wind');
-                container.width = container.clientWidth;
-                container.height = container.clientHeight;
-                var context = createContext(container);
-                this.wind = new WindGL(context, {
+                this.wind = new WindGL(ctx, {
                     fadeOpacity: fadeOpacity,
                     speedFactor: speedFactor,
                     dropRate: dropRate,
@@ -1436,6 +1427,7 @@
         return WindLayer;
     }(maptalks.CanvasLayer));
     WindLayer.registerRenderer('webgl', Renderer);
+    //# sourceMappingURL=index.js.map
 
     exports.WindLayer = WindLayer;
     exports.clamp = clamp;

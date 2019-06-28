@@ -1,13 +1,10 @@
-// @ts-ignore
 import * as maptalks from 'maptalks';
 import { createCanvas, createContext } from '../utils';
 
 class Renderer extends maptalks.renderer.CanvasLayerRenderer {
   private _drawContext: any;
   private canvas: HTMLCanvasElement | undefined;
-  private buffer: HTMLCanvasElement | undefined;
   private layer: any;
-  private context: CanvasRenderingContext2D | null | undefined;
   private gl: WebGLRenderingContext | undefined | null;
   checkResources() {
     return [];
@@ -15,6 +12,10 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
 
   getDrawParams() {
     return [];
+  }
+
+  hitDetect() {
+    return false;
   }
 
   draw() {
@@ -65,18 +66,13 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
     return super.needToRedraw();
   }
 
-  /**
-   * listen canvas create
-   */
-  onCanvasCreate() {
-    if (this.canvas && this.layer.options.doubleBuffer) {
-      const map = this.getMap();
-      const retina = map.getDevicePixelRatio();
-      this.buffer = createCanvas(
-        this.canvas.width, this.canvas.height, retina, this.getMap().CanvasClass,
-      );
-      this.context = this.buffer.getContext('2d');
+  createContext() {
+    if (this.gl && this.gl.canvas === this.canvas || this.context) {
+      return;
     }
+
+    // @ts-ignore
+    this.gl = createContext(this.canvas, this.layer.options.glOptions);
   }
 
   /**
@@ -89,9 +85,6 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
       const retina = map.getDevicePixelRatio();
       const [width, height] = [retina * size.width, retina * size.height];
       this.canvas = createCanvas(width, height, retina, map.CanvasClass);
-      this.gl = createContext(this.canvas, this.layer.options.glOptions);
-      this.onCanvasCreate();
-      this.layer.onCanvasCreate(this.context, this.gl);
       this.layer.fire('canvascreate', { context: this.context, gl: this.gl });
     }
   }
@@ -100,7 +93,7 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
    * when map changed, call canvas change
    * @param canvasSize
    */
-  resizeCanvas(canvasSize: any) {
+  resizeCanvas(canvasSize?: any) {
     if (this.canvas && this.gl) {
       const map = this.getMap();
       const retina = map.getDevicePixelRatio();
@@ -116,23 +109,22 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
    */
   clearCanvas() {
     if (this.canvas && this.gl) {
-      this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-      if (this.context) {
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      }
+      // this.gl.clearColor(0, 0, 0, 0);
+      // this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+      // this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
+    super.clearCanvas();
   }
 
   prepareCanvas() {
     if (!this.canvas) {
       this.createCanvas();
-      // this.createContext();
+      this.createContext();
     } else {
       this.clearCanvas();
+      this.resizeCanvas();
     }
-    const mask = super.prepareCanvas();
-    this.layer.fire('renderstart', { context: this.context, gl: this.gl });
-    return mask;
+    return super.prepareCanvas();
   }
 
   renderScene() {

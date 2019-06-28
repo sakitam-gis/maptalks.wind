@@ -87,6 +87,7 @@ class WindGL {
   public speedFactor: number;
   public dropRate: number;
   public dropRateBump: number;
+  private composite: boolean | undefined;
   public windData: {
     source: string;
     date: Date;
@@ -115,7 +116,7 @@ class WindGL {
 
   private windTexture: WebGLTexture|null;
   constructor(gl: WebGLRenderingContext, options: optionsTypes) {
-    const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles } = options;
+    const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles, composite } = options;
     this.options = options;
     this.gl = gl;
     this.fadeOpacity = fadeOpacity || 0.996; // how fast the particle trails fade on each frame
@@ -145,6 +146,7 @@ class WindGL {
     this.particleStateTexture1 = null;
 
     this.windTexture = null;
+    this.composite = composite;
 
     this.matrix = [];
 
@@ -154,7 +156,7 @@ class WindGL {
   }
 
   setOptions(options: optionsTypes) {
-    const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles } = options;
+    const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles, composite } = options;
     this.fadeOpacity = fadeOpacity || 0.996; // how fast the particle trails fade on each frame
     this.speedFactor = speedFactor || 0.25; // how fast the particles move
     this.dropRate = dropRate || 0.003; // how often the particles move to a random place
@@ -162,6 +164,7 @@ class WindGL {
     this.dropRateBump = dropRateBump || 0.01;
     this.setColorRamp(colorRamp || defaultRampColors);
     this.numParticles = numParticles || 65536;
+    this.composite = composite;
   }
 
   resize() {
@@ -215,14 +218,13 @@ class WindGL {
 
   drawScreen(matrix: number[], dateLineOffset: number) {
     const gl = this.gl;
-    const { composite } = this.options;
     // draw the screen into a temporary framebuffer to retain it as the background on the next frame
     bindFramebuffer(gl, this.framebuffer, this.screenTexture);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     this.drawTexture(this.backgroundTexture, this.fadeOpacity);
 
-    if (composite) {
+    if (this.composite) {
       this.drawParticles(matrix, dateLineOffset);
     }
 
@@ -236,7 +238,7 @@ class WindGL {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     // 预乘阿尔法通道
     // gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    if (!composite) {
+    if (!this.composite) {
       this.drawParticles(matrix, dateLineOffset);
     }
 

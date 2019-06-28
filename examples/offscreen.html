@@ -76,6 +76,7 @@
     speedFactor: 0.25,
     dropRate: 0.003,
     dropRateBump: 0.01,
+    composite: true,
     colorRamp: {
       0.0: '#3288bd',
       0.1: '#66c2a5',
@@ -126,6 +127,10 @@
     layer.setOptions(config);
   });
   gui.add(config, 'dropRateBump', 0, 0.2).onChange(() => {
+    layer.setOptions(config);
+  });
+
+  gui.add(config, 'composite').onChange(() => {
     layer.setOptions(config);
   });
 

@@ -2,16 +2,16 @@ import * as maptalks from 'maptalks';
 import { mat4 } from 'gl-matrix';
 import WindGL from './core/index';
 import Renderer from './render/renderer';
-import { createContext } from './utils';
+// import { createContext } from './utils';
 
 const _options = {
   renderer: 'webgl',
-  doubleBuffer: true,
+  // doubleBuffer: true,
   animation: true,
   glOptions: {
     // alpha: true,
     // antialias: true,
-    // preserveDrawingBuffer: true,
+    preserveDrawingBuffer: true,
   },
 };
 
@@ -109,16 +109,7 @@ class WindLayer extends maptalks.CanvasLayer {
     if (!this.wind) {
       if (!ctx) return;
       const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles, composite } = this.options;
-      // @ts-ignore
-      const container: HTMLCanvasElement = document.getElementById('wind');
-
-      container.width = container.clientWidth;
-      container.height = container.clientHeight;
-
-      const context = createContext(container);
-
-      // @ts-ignore
-      this.wind = new WindGL(context, {
+      this.wind = new WindGL(ctx, {
         fadeOpacity,
         speedFactor,
         dropRate,
