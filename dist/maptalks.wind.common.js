@@ -1,7 +1,7 @@
 /*!
  * author: sakitam-fdd <smilefdd@gmail.com> 
  * maptalks.wind v0.0.1
- * build-time: 2019-6-28 22:34
+ * build-time: 2019-6-29 17:34
  * LICENSE: MIT
  * (c) 2018-2019 
  */
@@ -1207,7 +1207,7 @@ var Renderer = (function (_super) {
             this.completeRender();
             return null;
         }
-        var args = [this.gl, view];
+        var args = [this.context, this.gl, view];
         var params = this.getDrawParams();
         args.push.apply(args, params ? (Array.isArray(params) ? params : [params]) : []);
         args.push.apply(args, this._drawContext);
@@ -1223,7 +1223,15 @@ var Renderer = (function (_super) {
         if (this.gl && this.gl.canvas === this.canvas || this.context) {
             return;
         }
-        this.gl = createContext(this.canvas, this.layer.options.glOptions);
+        this.context = this.canvas.getContext('2d');
+        if (!this.context) {
+            return;
+        }
+        this.gl = createContext(this.canvas2, this.layer.options.glOptions);
+        var dpr = this.getMap().getDevicePixelRatio();
+        if (dpr !== 1) {
+            this.context.scale(dpr, dpr);
+        }
     };
     Renderer.prototype.createCanvas = function () {
         if (!this.canvas) {
@@ -1232,8 +1240,21 @@ var Renderer = (function (_super) {
             var retina = map.getDevicePixelRatio();
             var _a = [retina * size.width, retina * size.height], width = _a[0], height = _a[1];
             this.canvas = createCanvas(width, height, retina, map.CanvasClass);
+            this.canvas2 = createCanvas(width, height, retina, map.CanvasClass);
             this.layer.fire('canvascreate', { context: this.context, gl: this.gl });
         }
+    };
+    Renderer.prototype.checkForCanvasSizeChange = function () {
+        var map = this.getMap();
+        var size = map.getSize();
+        var newWidth = size.width;
+        var newHeight = size.height;
+        if (newWidth !== this._width || newHeight !== this._height) {
+            this._width = newWidth;
+            this._height = newHeight;
+            return true;
+        }
+        return false;
     };
     Renderer.prototype.resizeCanvas = function (canvasSize) {
         if (this.canvas && this.gl) {
@@ -1242,12 +1263,20 @@ var Renderer = (function (_super) {
             var size = canvasSize || map.getSize();
             this.canvas.height = retina * size.height;
             this.canvas.width = retina * size.width;
+            if (this.canvas2) {
+                this.canvas2.width = retina * size.width;
+                this.canvas2.height = retina * size.height;
+            }
             this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
         }
     };
     Renderer.prototype.clearCanvas = function () {
-        if (this.canvas && this.gl) ;
-        _super.prototype.clearCanvas.call(this);
+        if (!this.canvas)
+            return;
+        if (this.canvas && this.context) {
+            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        if (this.gl) ;
     };
     Renderer.prototype.prepareCanvas = function () {
         if (!this.canvas) {
@@ -1256,9 +1285,10 @@ var Renderer = (function (_super) {
         }
         else {
             this.clearCanvas();
-            this.resizeCanvas();
+            if (this.checkForCanvasSizeChange()) {
+                this.resizeCanvas();
+            }
         }
-        return _super.prototype.prepareCanvas.call(this);
     };
     Renderer.prototype.renderScene = function () {
         this.completeRender();
@@ -1292,8 +1322,11 @@ var Renderer = (function (_super) {
 
 var _options = {
     renderer: 'webgl',
+    doubleBuffer: false,
     animation: true,
     glOptions: {
+        alpha: true,
+        antialias: true,
         preserveDrawingBuffer: true,
     },
 };
@@ -1339,7 +1372,7 @@ var WindLayer = (function (_super) {
     WindLayer.prototype.prepareToDraw = function () {
         return [];
     };
-    WindLayer.prototype.draw = function (ctx) {
+    WindLayer.prototype.draw = function (ctx, gl) {
         var map = this.getMap();
         if (!map)
             return;
@@ -1348,7 +1381,7 @@ var WindLayer = (function (_super) {
             if (!ctx)
                 return;
             var _a = this.options, fadeOpacity = _a.fadeOpacity, speedFactor = _a.speedFactor, dropRate = _a.dropRate, dropRateBump = _a.dropRateBump, colorRamp = _a.colorRamp, numParticles = _a.numParticles, composite = _a.composite;
-            this.wind = new WindGL(ctx, {
+            this.wind = new WindGL(gl, {
                 fadeOpacity: fadeOpacity,
                 speedFactor: speedFactor,
                 dropRate: dropRate,
@@ -1376,10 +1409,11 @@ var WindLayer = (function (_super) {
                 this.wind.render(mercatorMatrix, -i);
             }
         }
+        ctx.drawImage(gl.canvas, 0, 0);
         this.completeRender();
     };
-    WindLayer.prototype.drawOnInteracting = function (ctx) {
-        this.draw(ctx);
+    WindLayer.prototype.drawOnInteracting = function (ctx, gl) {
+        this.draw(ctx, gl);
     };
     WindLayer.prototype.project = function (lnglat, worldSize) {
         var lat = clamp(lnglat.y, -90, 90);

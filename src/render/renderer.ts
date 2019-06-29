@@ -3,9 +3,12 @@ import { createCanvas, createContext } from '../utils';
 
 class Renderer extends maptalks.renderer.CanvasLayerRenderer {
   private _drawContext: any;
-  private canvas: HTMLCanvasElement | undefined;
-  private layer: any;
-  private gl: WebGLRenderingContext | undefined | null;
+  public canvas: HTMLCanvasElement | undefined;
+  public canvas2: HTMLCanvasElement | undefined;
+  public layer: any;
+  public gl: WebGLRenderingContext | undefined | null;
+  private _width: number | undefined;
+  private _height: number | undefined;
   checkResources() {
     return [];
   }
@@ -48,7 +51,7 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
       this.completeRender();
       return null;
     }
-    const args = [this.gl, view];
+    const args = [this.context, this.gl, view];
     const params = this.getDrawParams();
     args.push.apply(args, params ? (Array.isArray(params) ? params : [params]) : []);
     args.push.apply(args, this._drawContext);
@@ -72,7 +75,18 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
     }
 
     // @ts-ignore
-    this.gl = createContext(this.canvas, this.layer.options.glOptions);
+    this.context = this.canvas.getContext('2d');
+    if (!this.context) {
+      return;
+    }
+
+    // @ts-ignore
+    this.gl = createContext(this.canvas2, this.layer.options.glOptions);
+
+    const dpr = this.getMap().getDevicePixelRatio();
+    if (dpr !== 1) {
+      this.context.scale(dpr, dpr);
+    }
   }
 
   /**
@@ -85,8 +99,22 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
       const retina = map.getDevicePixelRatio();
       const [width, height] = [retina * size.width, retina * size.height];
       this.canvas = createCanvas(width, height, retina, map.CanvasClass);
+      this.canvas2 = createCanvas(width, height, retina, map.CanvasClass);
       this.layer.fire('canvascreate', { context: this.context, gl: this.gl });
     }
+  }
+
+  checkForCanvasSizeChange() {
+    const map = this.getMap();
+    const size = map.getSize();
+    const newWidth = size.width;
+    const newHeight = size.height;
+    if (newWidth !== this._width || newHeight !== this._height) {
+      this._width = newWidth;
+      this._height = newHeight;
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -100,6 +128,10 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
       const size = canvasSize || map.getSize();
       this.canvas.height = retina * size.height;
       this.canvas.width = retina * size.width;
+      if (this.canvas2) {
+        this.canvas2.width = retina * size.width;
+        this.canvas2.height = retina * size.height;
+      }
       this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     }
   }
@@ -108,12 +140,13 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
    * clear canvas
    */
   clearCanvas() {
-    if (this.canvas && this.gl) {
-      // this.gl.clearColor(0, 0, 0, 0);
-      // this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    if (!this.canvas) return;
+    if (this.canvas && this.context) {
+      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    if (this.gl) {
       // this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
-    super.clearCanvas();
   }
 
   prepareCanvas() {
@@ -122,9 +155,10 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
       this.createContext();
     } else {
       this.clearCanvas();
-      this.resizeCanvas();
+      if (this.checkForCanvasSizeChange()) {
+        this.resizeCanvas();
+      }
     }
-    return super.prepareCanvas();
   }
 
   renderScene() {

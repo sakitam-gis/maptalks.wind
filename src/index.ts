@@ -6,11 +6,11 @@ import Renderer from './render/renderer';
 
 const _options = {
   renderer: 'webgl',
-  // doubleBuffer: true,
+  doubleBuffer: false,
   animation: true,
   glOptions: {
-    // alpha: true,
-    // antialias: true,
+    alpha: true,
+    antialias: true,
     preserveDrawingBuffer: true,
   },
 };
@@ -101,15 +101,14 @@ class WindLayer extends maptalks.CanvasLayer {
     return [];
   }
 
-  draw(ctx: WebGLRenderingContext) {
+  draw(ctx: CanvasRenderingContext2D, gl: WebGLRenderingContext) {
     const map = this.getMap();
     if (!map) return;
-    // const mercatorMatrix = this.calcLayerMatrices(map);
     const mercatorMatrix = this.calcMatrices(map);
     if (!this.wind) {
       if (!ctx) return;
       const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles, composite } = this.options;
-      this.wind = new WindGL(ctx, {
+      this.wind = new WindGL(gl, {
         fadeOpacity,
         speedFactor,
         dropRate,
@@ -139,14 +138,16 @@ class WindLayer extends maptalks.CanvasLayer {
       }
     }
 
+    ctx.drawImage(gl.canvas, 0, 0);
+
     this.completeRender();
   }
 
   /**
    * inter
    */
-  drawOnInteracting(ctx: WebGLRenderingContext) {
-    this.draw(ctx);
+  drawOnInteracting(ctx: CanvasRenderingContext2D, gl: WebGLRenderingContext) {
+    this.draw(ctx, gl);
   }
 
   project(lnglat: any, worldSize: number) {
