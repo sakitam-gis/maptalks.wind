@@ -2,7 +2,6 @@ import * as maptalks from 'maptalks';
 import { mat4 } from 'gl-matrix';
 import WindGL from './core/index';
 import Renderer from './render/renderer';
-// import { createContext } from './utils';
 
 const _options = {
   renderer: 'webgl',
@@ -108,12 +107,7 @@ class WindLayer extends maptalks.CanvasLayer {
     if (!this.wind) {
       if (!ctx) return;
       const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles, composite } = this.options;
-      let renderCtx = gl;
-      if (this._canvas) {
-        // @ts-ignore
-        renderCtx = createContext(this._canvas, this.options.glOptions);
-      }
-      this.wind = new WindGL(renderCtx, {
+      this.wind = new WindGL(gl, {
         fadeOpacity,
         speedFactor,
         dropRate,
