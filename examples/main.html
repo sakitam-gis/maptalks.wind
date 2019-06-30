@@ -102,13 +102,7 @@
     48: '2016112200',
   };
 
-  const canvas = document.getElementById('wind');
-
-  canvas.width = canvas.clientWidth;
-  canvas.height = canvas.clientHeight;
-
   var layer = new maptalks.WindLayer('1', null, {
-    canvas: canvas,
     animation: true,
     renderer: 'webgl',
     composite: true,

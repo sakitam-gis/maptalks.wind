@@ -108,7 +108,12 @@ class WindLayer extends maptalks.CanvasLayer {
     if (!this.wind) {
       if (!ctx) return;
       const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles, composite } = this.options;
-      this.wind = new WindGL(gl, {
+      let renderCtx = gl;
+      if (this._canvas) {
+        // @ts-ignore
+        renderCtx = createContext(this._canvas, this.options.glOptions);
+      }
+      this.wind = new WindGL(renderCtx, {
         fadeOpacity,
         speedFactor,
         dropRate,

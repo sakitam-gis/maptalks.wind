@@ -1,7 +1,7 @@
 /*!
  * author: sakitam-fdd <smilefdd@gmail.com> 
  * maptalks.wind v0.0.1
- * build-time: 2019-6-29 17:34
+ * build-time: 2019-6-30 21:47
  * LICENSE: MIT
  * (c) 2018-2019 
  */
@@ -1143,7 +1143,7 @@ var createCanvas = function (width, height, scaleFactor, Canvas) {
     }
     return new Canvas(width, height);
 };
-var createContext = function (canvas, glOptions) {
+var createContext$1 = function (canvas, glOptions) {
     if (glOptions === void 0) { glOptions = {}; }
     if (!canvas) {
         return null;
@@ -1223,7 +1223,7 @@ var Renderer = (function (_super) {
         if (!this.context) {
             return;
         }
-        this.gl = createContext(this.canvas2, this.layer.options.glOptions);
+        this.gl = createContext$1(this.canvas2, this.layer.options.glOptions);
         var dpr = this.getMap().getDevicePixelRatio();
         if (dpr !== 1) {
             this.context.scale(dpr, dpr);
@@ -1315,6 +1315,7 @@ var Renderer = (function (_super) {
     };
     return Renderer;
 }(renderer.CanvasLayerRenderer));
+//# sourceMappingURL=renderer.js.map
 
 var _options = {
     renderer: 'webgl',
@@ -1377,7 +1378,11 @@ var WindLayer = (function (_super) {
             if (!ctx)
                 return;
             var _a = this.options, fadeOpacity = _a.fadeOpacity, speedFactor = _a.speedFactor, dropRate = _a.dropRate, dropRateBump = _a.dropRateBump, colorRamp = _a.colorRamp, numParticles = _a.numParticles, composite = _a.composite;
-            this.wind = new WindGL(gl, {
+            var renderCtx = gl;
+            if (this._canvas) {
+                renderCtx = createContext(this._canvas, this.options.glOptions);
+            }
+            this.wind = new WindGL(renderCtx, {
                 fadeOpacity: fadeOpacity,
                 speedFactor: speedFactor,
                 dropRate: dropRate,
@@ -1457,7 +1462,6 @@ var WindLayer = (function (_super) {
     return WindLayer;
 }(CanvasLayer));
 WindLayer.registerRenderer('webgl', Renderer);
-//# sourceMappingURL=index.js.map
 
 export { WindLayer, clamp, mercatorXfromLng, mercatorYfromLat, wrap };
 //# sourceMappingURL=maptalks.wind.esm.js.map
