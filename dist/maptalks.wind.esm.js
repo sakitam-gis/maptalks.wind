@@ -1,7 +1,7 @@
 /*!
  * author: sakitam-fdd <smilefdd@gmail.com> 
  * maptalks.wind v0.0.1
- * build-time: 2019-6-30 21:47
+ * build-time: 2019-6-30 22:4
  * LICENSE: MIT
  * (c) 2018-2019 
  */
@@ -922,7 +922,6 @@ function bindFramebuffer(gl, framebuffer, texture) {
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
     }
 }
-//# sourceMappingURL=utils.js.map
 
 var drawVert = "precision mediump float;\n#define GLSLIFY 1\n\nattribute float a_index;\n\nuniform sampler2D u_particles;\nuniform float u_particles_res;\n\nuniform mat4 u_matrix;\nuniform float u_dateline_offset;\n\nvarying vec2 v_particle_pos;\n\nvoid main() {\n  vec4 color = texture2D(u_particles, vec2(\n  fract(a_index / u_particles_res),\n  floor(a_index / u_particles_res) / u_particles_res));\n\n  v_particle_pos = vec2(\n  color.r / 255.0 + color.b,\n  color.g / 255.0 + color.a);\n  gl_PointSize = 1.0;\n  gl_Position = u_matrix * vec4(v_particle_pos.xy + vec2(u_dateline_offset, 0), 0, 1);\n}\n"; // eslint-disable-line
 
@@ -1123,7 +1122,6 @@ var WindGL = (function () {
     };
     return WindGL;
 }());
-//# sourceMappingURL=index.js.map
 
 var CONTEXT_TYPES = [
     'webgl2',
@@ -1162,7 +1160,6 @@ var createContext$1 = function (canvas, glOptions) {
     }
     return null;
 };
-//# sourceMappingURL=index.js.map
 
 var Renderer = (function (_super) {
     __extends(Renderer, _super);
@@ -1315,7 +1312,6 @@ var Renderer = (function (_super) {
     };
     return Renderer;
 }(renderer.CanvasLayerRenderer));
-//# sourceMappingURL=renderer.js.map
 
 var _options = {
     renderer: 'webgl',
