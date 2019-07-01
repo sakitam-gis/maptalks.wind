@@ -2,14 +2,15 @@ import * as maptalks from 'maptalks';
 import { mat4 } from 'gl-matrix';
 import WindGL from './core/index';
 import Renderer from './render/renderer';
+import { createContext } from './utils';
 
 const _options = {
   renderer: 'webgl',
   doubleBuffer: false,
   animation: true,
   glOptions: {
-    alpha: true,
-    antialias: true,
+    // alpha: true,
+    // antialias: true,
     preserveDrawingBuffer: true,
   },
 };
@@ -104,10 +105,16 @@ class WindLayer extends maptalks.CanvasLayer {
     const map = this.getMap();
     if (!map) return;
     const mercatorMatrix = this.calcMatrices(map);
+    const canvas = this.options.cv;
+    let ownGl = gl;
+    if (canvas) {
+      // @ts-ignore
+      ownGl = createContext(canvas, {});
+    }
     if (!this.wind) {
       if (!ctx) return;
       const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles, composite } = this.options;
-      this.wind = new WindGL(gl, {
+      this.wind = new WindGL(ownGl, {
         fadeOpacity,
         speedFactor,
         dropRate,
@@ -137,7 +144,9 @@ class WindLayer extends maptalks.CanvasLayer {
       }
     }
 
-    ctx.drawImage(gl.canvas, 0, 0);
+    if (!canvas) {
+      ctx.drawImage(gl.canvas, 0, 0);
+    }
 
     this.completeRender();
   }

@@ -1,7 +1,7 @@
 /*!
  * author: sakitam-fdd <smilefdd@gmail.com> 
  * maptalks.wind v0.0.1
- * build-time: 2019-6-30 22:4
+ * build-time: 2019-7-1 22:27
  * LICENSE: MIT
  * (c) 2018-2019 
  */
@@ -1326,8 +1326,6 @@ var _options = {
     doubleBuffer: false,
     animation: true,
     glOptions: {
-        alpha: true,
-        antialias: true,
         preserveDrawingBuffer: true,
     },
 };
@@ -1378,11 +1376,16 @@ var WindLayer = (function (_super) {
         if (!map)
             return;
         var mercatorMatrix = this.calcMatrices(map);
+        var canvas = this.options.cv;
+        var ownGl = gl;
+        if (canvas) {
+            ownGl = createContext(canvas, {});
+        }
         if (!this.wind) {
             if (!ctx)
                 return;
             var _a = this.options, fadeOpacity = _a.fadeOpacity, speedFactor = _a.speedFactor, dropRate = _a.dropRate, dropRateBump = _a.dropRateBump, colorRamp = _a.colorRamp, numParticles = _a.numParticles, composite = _a.composite;
-            this.wind = new WindGL(gl, {
+            this.wind = new WindGL(ownGl, {
                 fadeOpacity: fadeOpacity,
                 speedFactor: speedFactor,
                 dropRate: dropRate,
@@ -1410,7 +1413,9 @@ var WindLayer = (function (_super) {
                 this.wind.render(mercatorMatrix, -i);
             }
         }
-        ctx.drawImage(gl.canvas, 0, 0);
+        if (!canvas) {
+            ctx.drawImage(gl.canvas, 0, 0);
+        }
         this.completeRender();
     };
     WindLayer.prototype.drawOnInteracting = function (ctx, gl) {
