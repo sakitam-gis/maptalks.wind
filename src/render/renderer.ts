@@ -132,7 +132,11 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
         this.canvas2.width = retina * size.width;
         this.canvas2.height = retina * size.height;
       }
-      this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+      if (this.gl && this.canvas2) {
+        if (this.layer.wind) {
+          this.layer.wind.resize();
+        }
+      }
     }
   }
 
@@ -141,11 +145,8 @@ class Renderer extends maptalks.renderer.CanvasLayerRenderer {
    */
   clearCanvas() {
     if (!this.canvas) return;
-    if (this.canvas && this.context) {
+    if (this.context) {
       this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-    if (this.gl) {
-      // this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
   }
 

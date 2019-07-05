@@ -76,7 +76,6 @@
     speedFactor: 0.25,
     dropRate: 0.003,
     dropRateBump: 0.01,
-    composite: true,
     colorRamp: {
       0.0: '#3288bd',
       0.1: '#66c2a5',
@@ -111,7 +110,6 @@
     canvas: canvas,
     animation: true,
     renderer: 'webgl',
-    composite: true,
     spatialReference:{
       projection:'EPSG:4326'
     }
@@ -123,20 +121,16 @@
   gui.add(config, 'numParticles', 1024, 589824).onChange(() => {
     layer.setOptions(config);
   });
-  gui.add(config, 'fadeOpacity', 0.96, 0.999, 0.001).updateDisplay().onChange(() => {
+  gui.add(config, 'fadeOpacity', 0, 0.999, 0.001).updateDisplay().onChange(() => {
     layer.setOptions(config);
   });
-  gui.add(config, 'speedFactor', 0.05, 1.0).onChange(() => {
+  gui.add(config, 'speedFactor', 0, 1.0).onChange(() => {
     layer.setOptions(config);
   });
   gui.add(config, 'dropRate', 0, 0.1).onChange(() => {
     layer.setOptions(config);
   });
   gui.add(config, 'dropRateBump', 0, 0.2).onChange(() => {
-    layer.setOptions(config);
-  });
-
-  gui.add(config, 'composite').onChange(() => {
     layer.setOptions(config);
   });
 

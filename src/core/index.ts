@@ -10,8 +10,11 @@ import {
 } from './utils';
 import drawVert from '../shaders/draw.vertex.glsl';
 import drawFrag from '../shaders/draw.fragment.glsl';
-import quadVert from '../shaders/quad.vertex.glsl';
+
+import screenVert from '../shaders/screen.vertex.glsl';
 import screenFrag from '../shaders/screen.fragment.glsl';
+
+import updateVert from '../shaders/update.vertex.glsl';
 import updateFrag from '../shaders/update.fragment.glsl';
 
 function getColorRamp(colors: {}) {
@@ -47,7 +50,6 @@ interface optionsTypes {
   dropRateBump?: number;
   colorRamp?: {};
   numParticles?: number;
-  composite?: boolean;
 }
 
 class WindGL {
@@ -87,7 +89,6 @@ class WindGL {
   public speedFactor: number;
   public dropRate: number;
   public dropRateBump: number;
-  private composite: boolean | undefined;
   public windData: {
     source: string;
     date: Date;
@@ -116,7 +117,7 @@ class WindGL {
 
   private windTexture: WebGLTexture|null;
   constructor(gl: WebGLRenderingContext, options: optionsTypes) {
-    const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles, composite } = options;
+    const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles } = options;
     this.options = options;
     this.gl = gl;
     this.fadeOpacity = fadeOpacity || 0.996; // how fast the particle trails fade on each frame
@@ -127,8 +128,8 @@ class WindGL {
     // this.numParticles = numParticles || 65536;
 
     this.drawProgram = createProgram(gl, drawVert, drawFrag);
-    this.screenProgram = createProgram(gl, quadVert, screenFrag);
-    this.updateProgram = createProgram(gl, quadVert, updateFrag);
+    this.screenProgram = createProgram(gl, screenVert, screenFrag);
+    this.updateProgram = createProgram(gl, updateVert, updateFrag);
 
     this.quadBuffer = createBuffer(gl, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]));
     this.framebuffer = gl.createFramebuffer();
@@ -146,7 +147,6 @@ class WindGL {
     this.particleStateTexture1 = null;
 
     this.windTexture = null;
-    this.composite = composite;
 
     this.matrix = [];
 
@@ -156,7 +156,7 @@ class WindGL {
   }
 
   setOptions(options: optionsTypes) {
-    const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles, composite } = options;
+    const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles } = options;
     this.fadeOpacity = fadeOpacity || 0.996; // how fast the particle trails fade on each frame
     this.speedFactor = speedFactor || 0.25; // how fast the particles move
     this.dropRate = dropRate || 0.003; // how often the particles move to a random place
@@ -164,7 +164,6 @@ class WindGL {
     this.dropRateBump = dropRateBump || 0.01;
     this.setColorRamp(colorRamp || defaultRampColors);
     this.numParticles = numParticles || 65536;
-    this.composite = composite;
   }
 
   resize() {
@@ -205,17 +204,13 @@ class WindGL {
     const windData = this.windData;
     if (!gl || !windData) { return; }
     this.matrix = matrix;
-    const blendingEnabled = gl.isEnabled(gl.BLEND);
-    gl.disable(gl.BLEND);
-    gl.disable(gl.DEPTH_TEST);
-    gl.disable(gl.STENCIL_TEST);
     bindTexture(gl, this.windTexture, 0);
     bindTexture(gl, this.particleStateTexture0, 1);
     this.drawScreen(matrix, dateLineOffset);
     this.updateParticles();
-    if (blendingEnabled) { gl.enable(gl.BLEND); }
   }
 
+  // @ts-ignore
   drawScreen(matrix: number[], dateLineOffset: number) {
     const gl = this.gl;
     // draw the screen into a temporary framebuffer to retain it as the background on the next frame
@@ -223,26 +218,20 @@ class WindGL {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     this.drawTexture(this.backgroundTexture, this.fadeOpacity);
-
-    if (this.composite) {
-      this.drawParticles(matrix, dateLineOffset);
-    }
+    this.drawParticles(matrix, dateLineOffset);
 
     bindFramebuffer(gl, null);
 
     gl.enable(gl.BLEND);
 
-    this.drawParticles(matrix, dateLineOffset);
-
     // 非预乘阿尔法
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.clearColor(0.0, 0.0, 0.0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
     // 预乘阿尔法通道
     // gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    if (!this.composite) {
-      this.drawParticles(matrix, dateLineOffset);
-    }
-
     this.drawTexture(this.screenTexture, 1.0);
+    // this.drawParticles(matrix, dateLineOffset);
 
     gl.disable(gl.BLEND);
     // save the current screen as the background for the next frame
@@ -257,8 +246,11 @@ class WindGL {
     gl.useProgram(program.program);
     bindAttribute(gl, this.quadBuffer, program.a_pos, 2);
     bindTexture(gl, texture, 2);
+
     gl.uniform1i(program.u_screen, 2);
+    gl.uniform1f(program.u_opacity_border, 0.0);
     gl.uniform1f(program.u_opacity, opacity);
+
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
@@ -266,8 +258,10 @@ class WindGL {
     const gl = this.gl;
     const program = this.drawProgram;
     gl.useProgram(program.program);
+
     bindAttribute(gl, this.particleIndexBuffer, program.a_index, 1);
     bindTexture(gl, this.colorRampTexture, 2);
+
     gl.uniform1i(program.u_wind, 0);
     gl.uniform1i(program.u_particles, 1);
     gl.uniform1i(program.u_color_ramp, 2);
@@ -275,11 +269,8 @@ class WindGL {
     gl.uniform2f(program.u_wind_min, this.windData.uMin, this.windData.vMin);
     gl.uniform2f(program.u_wind_max, this.windData.uMax, this.windData.vMax);
     gl.uniform1f(program.u_dateline_offset, dateLineOffset);
-    // 1、要修改的uniform属性的位置的对象
-    // 2、是否逆转矩阵
-    // 3、矩阵
+    // 1、要修改的uniform属性的位置的对象 2、是否逆转矩阵 3、矩阵
     gl.uniformMatrix4fv(program.u_matrix, false, matrix);
-    // gl.uniform4fv(program.u_bbox, this.bbox);
     gl.drawArrays(gl.POINTS, 0, this._numParticles);
   }
 
@@ -301,7 +292,6 @@ class WindGL {
     gl.uniform1f(program.u_speed_factor, this.speedFactor);
     gl.uniform1f(program.u_drop_rate, this.dropRate);
     gl.uniform1f(program.u_drop_rate_bump, this.dropRateBump);
-    // gl.uniform4fv(program.u_bbox, this.bbox);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     // swap the particle state textures so the new one becomes the current one
     const temp = this.particleStateTexture0;

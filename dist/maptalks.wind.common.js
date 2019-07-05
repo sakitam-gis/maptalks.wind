@@ -1,7 +1,7 @@
 /*!
  * author: sakitam-fdd <smilefdd@gmail.com> 
  * maptalks.wind v0.0.1
- * build-time: 2019-6-30 22:4
+ * build-time: 2019-7-5 13:39
  * LICENSE: MIT
  * (c) 2018-2019 
  */
@@ -932,9 +932,11 @@ var drawVert = "precision mediump float;\n#define GLSLIFY 1\n\nattribute float a
 
 var drawFrag = "precision mediump float;\n#define GLSLIFY 1\n\nuniform sampler2D u_wind;\nuniform vec2 u_wind_min;\nuniform vec2 u_wind_max;\nuniform sampler2D u_color_ramp;\n\nvarying vec2 v_particle_pos;\n\nvoid main() {\n  vec2 velocity = mix(u_wind_min, u_wind_max, texture2D(u_wind, v_particle_pos).rg);\n  float speed_t = length(velocity) / length(u_wind_max);\n\n  // color ramp is encoded in a 16x16 texture\n  vec2 ramp_pos = vec2(\n  fract(16.0 * speed_t),\n  floor(16.0 * speed_t) / 16.0);\n\n  gl_FragColor = texture2D(u_color_ramp, ramp_pos);\n}\n"; // eslint-disable-line
 
-var quadVert = "precision mediump float;\n#define GLSLIFY 1\n\nattribute vec2 a_pos;\n\nvarying vec2 v_tex_pos;\n\nvoid main() {\n  v_tex_pos = a_pos;\n  gl_Position = vec4(1.0 - 2.0 * a_pos, 0, 1);\n}\n"; // eslint-disable-line
+var screenVert = "precision highp float;\n#define GLSLIFY 1\n\nattribute vec2 a_pos;\n\nvarying vec2 v_tex_pos;\n\nvoid main() {\n  v_tex_pos = a_pos;\n  gl_Position = vec4(1.0 - 2.0 * a_pos, 0, 1);\n}\n"; // eslint-disable-line
 
-var screenFrag = "precision mediump float;\n#define GLSLIFY 1\n\nuniform sampler2D u_screen;\nuniform float u_opacity;\n\nvarying vec2 v_tex_pos;\n\nvoid main() {\n  vec4 color = texture2D(u_screen, 1.0 - v_tex_pos);\n  // a hack to guarantee opacity fade out even with a value close to 1.0\n  gl_FragColor = vec4(floor(255.0 * color * u_opacity) / 255.0);\n}\n"; // eslint-disable-line
+var screenFrag = "precision highp float;\n#define GLSLIFY 1\n\nuniform sampler2D u_screen;\n\nuniform float u_opacity;\nuniform float u_opacity_border;\n\nvarying vec2 v_tex_pos;\n\nvoid main() {\n  vec2 point = 1.0 - v_tex_pos;\n  vec4 color = texture2D(u_screen, point);\n\n  if (point.x < u_opacity_border || point.x > 1. - u_opacity_border || point.y < u_opacity_border || point.y > 1. - u_opacity_border) {\n    gl_FragColor = vec4(0.);\n  } else {\n    // opacity fade out even with a value close to 0.0\n    // a hack to guarantee opacity fade out even with a value close to 1.0\n    gl_FragColor = vec4(floor(255.0 * color * u_opacity) / 255.0);\n  }\n}\n"; // eslint-disable-line
+
+var updateVert = "precision mediump float;\n#define GLSLIFY 1\n\nattribute vec2 a_pos;\n\nvarying vec2 v_tex_pos;\n\nvoid main() {\n  v_tex_pos = a_pos;\n  gl_Position = vec4(1.0 - 2.0 * a_pos, 0, 1);\n}\n"; // eslint-disable-line
 
 var updateFrag = "precision highp float;\n#define GLSLIFY 1\n\nuniform sampler2D u_particles;\nuniform sampler2D u_wind;\nuniform vec2 u_wind_res;\nuniform vec2 u_wind_min;\nuniform vec2 u_wind_max;\nuniform float u_rand_seed;\nuniform float u_speed_factor;\nuniform float u_drop_rate;\nuniform float u_drop_rate_bump;\n//uniform vec4 u_bbox;\n\nvarying vec2 v_tex_pos;\n\n// pseudo-random generator\nconst vec3 rand_constants = vec3(12.9898, 78.233, 4375.85453);\nfloat rand(const vec2 co) {\n  float t = dot(rand_constants.xy, co);\n  return fract(sin(t) * (rand_constants.z + t));\n}\n\n// wind speed lookup; use manual bilinear filtering based on 4 adjacent pixels for smooth interpolation\nvec2 lookup_wind(const vec2 uv) {\n  // return texture2D(u_wind, uv).rg; // lower-res hardware filtering\n  vec2 px = 1.0 / u_wind_res;\n  vec2 vc = (floor(uv * u_wind_res)) * px;\n  vec2 f = fract(uv * u_wind_res);\n  vec2 tl = texture2D(u_wind, vc).rg;\n  vec2 tr = texture2D(u_wind, vc + vec2(px.x, 0)).rg;\n  vec2 bl = texture2D(u_wind, vc + vec2(0, px.y)).rg;\n  vec2 br = texture2D(u_wind, vc + px).rg;\n  return mix(mix(tl, tr, f.x), mix(bl, br, f.x), f.y);\n}\n\nvoid main() {\n  vec4 color = texture2D(u_particles, v_tex_pos);\n  vec2 pos = vec2(\n  color.r / 255.0 + color.b,\n  color.g / 255.0 + color.a); // decode particle position from pixel RGBA\n\n  // convert to global geographic position\n  //    vec2 global_pos = u_bbox.xy + pos * (u_bbox.zw - u_bbox.xy);\n\n  vec2 velocity = mix(u_wind_min, u_wind_max, lookup_wind(pos));\n  float speed_t = length(velocity) / length(u_wind_max);\n\n  // take EPSG:4236 distortion into account for calculating where the particle moved\n  //    float distortion = cos(radians(global_pos.y * 180.0 - 90.0));\n  //    vec2 offset = vec2(velocity.x / distortion, -velocity.y) * 0.0001 * u_speed_factor;\n  vec2 offset = vec2(velocity.x, -velocity.y) * 0.0001 * u_speed_factor;\n  // update particle position, wrapping around the boundaries\n  pos = fract(1.0 + pos + offset);\n\n  // a random seed to use for the particle drop\n  vec2 seed = (pos + v_tex_pos) * u_rand_seed;\n\n  // drop rate is a chance a particle will restart at random position, to avoid degeneration\n  float drop_rate = u_drop_rate + speed_t * u_drop_rate_bump;\n  float drop = step(1.0 - drop_rate, rand(seed));\n\n  //    float retain = step(drop_rate, rand(seed));\n\n  vec2 random_pos = vec2(rand(seed + 1.3), rand(seed + 2.1));\n  //    pos = mix(pos, random_pos, 1.0 - retain);\n  pos = mix(pos, random_pos, drop);\n  // encode the new particle position back into RGBA\n  gl_FragColor = vec4(\n  fract(pos * 255.0),\n  floor(pos * 255.0) / 255.0);\n}\n"; // eslint-disable-line
 
@@ -963,7 +965,7 @@ var defaultRampColors = {
 };
 var WindGL = (function () {
     function WindGL(gl, options) {
-        var fadeOpacity = options.fadeOpacity, speedFactor = options.speedFactor, dropRate = options.dropRate, dropRateBump = options.dropRateBump, colorRamp = options.colorRamp, numParticles = options.numParticles, composite = options.composite;
+        var fadeOpacity = options.fadeOpacity, speedFactor = options.speedFactor, dropRate = options.dropRate, dropRateBump = options.dropRateBump, colorRamp = options.colorRamp, numParticles = options.numParticles;
         this.options = options;
         this.gl = gl;
         this.fadeOpacity = fadeOpacity || 0.996;
@@ -971,8 +973,8 @@ var WindGL = (function () {
         this.dropRate = dropRate || 0.003;
         this.dropRateBump = dropRateBump || 0.01;
         this.drawProgram = createProgram(gl, drawVert, drawFrag);
-        this.screenProgram = createProgram(gl, quadVert, screenFrag);
-        this.updateProgram = createProgram(gl, quadVert, updateFrag);
+        this.screenProgram = createProgram(gl, screenVert, screenFrag);
+        this.updateProgram = createProgram(gl, updateVert, updateFrag);
         this.quadBuffer = createBuffer(gl, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]));
         this.framebuffer = gl.createFramebuffer();
         this.windData = {};
@@ -985,7 +987,6 @@ var WindGL = (function () {
         this.particleStateTexture0 = null;
         this.particleStateTexture1 = null;
         this.windTexture = null;
-        this.composite = composite;
         this.matrix = [];
         this.setColorRamp(colorRamp || defaultRampColors);
         this.numParticles = numParticles || 65536;
@@ -1016,14 +1017,13 @@ var WindGL = (function () {
         configurable: true
     });
     WindGL.prototype.setOptions = function (options) {
-        var fadeOpacity = options.fadeOpacity, speedFactor = options.speedFactor, dropRate = options.dropRate, dropRateBump = options.dropRateBump, colorRamp = options.colorRamp, numParticles = options.numParticles, composite = options.composite;
+        var fadeOpacity = options.fadeOpacity, speedFactor = options.speedFactor, dropRate = options.dropRate, dropRateBump = options.dropRateBump, colorRamp = options.colorRamp, numParticles = options.numParticles;
         this.fadeOpacity = fadeOpacity || 0.996;
         this.speedFactor = speedFactor || 0.25;
         this.dropRate = dropRate || 0.003;
         this.dropRateBump = dropRateBump || 0.01;
         this.setColorRamp(colorRamp || defaultRampColors);
         this.numParticles = numParticles || 65536;
-        this.composite = composite;
     };
     WindGL.prototype.resize = function () {
         var gl = this.gl;
@@ -1045,33 +1045,22 @@ var WindGL = (function () {
             return;
         }
         this.matrix = matrix;
-        var blendingEnabled = gl.isEnabled(gl.BLEND);
-        gl.disable(gl.BLEND);
-        gl.disable(gl.DEPTH_TEST);
-        gl.disable(gl.STENCIL_TEST);
         bindTexture(gl, this.windTexture, 0);
         bindTexture(gl, this.particleStateTexture0, 1);
         this.drawScreen(matrix, dateLineOffset);
         this.updateParticles();
-        if (blendingEnabled) {
-            gl.enable(gl.BLEND);
-        }
     };
     WindGL.prototype.drawScreen = function (matrix, dateLineOffset) {
         var gl = this.gl;
         bindFramebuffer(gl, this.framebuffer, this.screenTexture);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         this.drawTexture(this.backgroundTexture, this.fadeOpacity);
-        if (this.composite) {
-            this.drawParticles(matrix, dateLineOffset);
-        }
+        this.drawParticles(matrix, dateLineOffset);
         bindFramebuffer(gl, null);
         gl.enable(gl.BLEND);
-        this.drawParticles(matrix, dateLineOffset);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-        if (!this.composite) {
-            this.drawParticles(matrix, dateLineOffset);
-        }
+        gl.clearColor(0.0, 0.0, 0.0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
         this.drawTexture(this.screenTexture, 1.0);
         gl.disable(gl.BLEND);
         var temp = this.backgroundTexture;
@@ -1085,6 +1074,7 @@ var WindGL = (function () {
         bindAttribute(gl, this.quadBuffer, program.a_pos, 2);
         bindTexture(gl, texture, 2);
         gl.uniform1i(program.u_screen, 2);
+        gl.uniform1f(program.u_opacity_border, 0.0);
         gl.uniform1f(program.u_opacity, opacity);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
@@ -1127,7 +1117,6 @@ var WindGL = (function () {
     };
     return WindGL;
 }());
-//# sourceMappingURL=index.js.map
 
 var CONTEXT_TYPES = [
     'webgl2',
@@ -1267,16 +1256,19 @@ var Renderer = (function (_super) {
                 this.canvas2.width = retina * size.width;
                 this.canvas2.height = retina * size.height;
             }
-            this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+            if (this.gl && this.canvas2) {
+                if (this.layer.wind) {
+                    this.layer.wind.resize();
+                }
+            }
         }
     };
     Renderer.prototype.clearCanvas = function () {
         if (!this.canvas)
             return;
-        if (this.canvas && this.context) {
+        if (this.context) {
             this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         }
-        if (this.gl) ;
     };
     Renderer.prototype.prepareCanvas = function () {
         if (!this.canvas) {
@@ -1326,8 +1318,11 @@ var _options = {
     doubleBuffer: false,
     animation: true,
     glOptions: {
+        antialias: false,
+        depth: false,
+        stencil: false,
         alpha: true,
-        antialias: true,
+        premultipliedAlpha: true,
         preserveDrawingBuffer: true,
     },
 };
@@ -1381,7 +1376,7 @@ var WindLayer = (function (_super) {
         if (!this.wind) {
             if (!ctx)
                 return;
-            var _a = this.options, fadeOpacity = _a.fadeOpacity, speedFactor = _a.speedFactor, dropRate = _a.dropRate, dropRateBump = _a.dropRateBump, colorRamp = _a.colorRamp, numParticles = _a.numParticles, composite = _a.composite;
+            var _a = this.options, fadeOpacity = _a.fadeOpacity, speedFactor = _a.speedFactor, dropRate = _a.dropRate, dropRateBump = _a.dropRateBump, colorRamp = _a.colorRamp, numParticles = _a.numParticles;
             this.wind = new WindGL(gl, {
                 fadeOpacity: fadeOpacity,
                 speedFactor: speedFactor,
@@ -1389,19 +1384,14 @@ var WindLayer = (function (_super) {
                 dropRateBump: dropRateBump,
                 colorRamp: colorRamp,
                 numParticles: numParticles,
-                composite: composite,
             });
         }
         if (this.wind) {
-            var fullExtent = map.getFullExtent();
-            var extent = map.getProjExtent();
-            var fullMin = Math.min(fullExtent.xmax, fullExtent.xmin);
-            var min = Math.min(extent.xmax, extent.xmin);
-            var fullMax = Math.max(fullExtent.xmax, fullExtent.xmin);
-            var max = Math.max(extent.xmax, extent.xmin);
-            var total = fullMax - fullMin;
-            var eastIter = Math.max(0, Math.ceil((max - fullMax) / total));
-            var westIter = Math.max(0, Math.ceil((min - fullMin) / -total));
+            var extent = map.getExtent();
+            var min = extent.getMin();
+            var max = extent.getMax();
+            var eastIter = Math.max(0, Math.ceil((max.x - 180) / 360));
+            var westIter = Math.max(0, Math.ceil((min.x + 180) / -360));
             this.wind.render(mercatorMatrix, 0);
             for (var i = 1; i <= eastIter; i++) {
                 this.wind.render(mercatorMatrix, i);
@@ -1451,9 +1441,6 @@ var WindLayer = (function (_super) {
         return scale([], m, [worldSize, worldSize, worldSize]);
     };
     WindLayer.prototype.onResize = function () {
-        if (this.wind) {
-            this.wind.resize();
-        }
         _super.prototype.onResize.call(this);
     };
     WindLayer.prototype.remove = function () {
@@ -1462,6 +1449,7 @@ var WindLayer = (function (_super) {
     return WindLayer;
 }(maptalks.CanvasLayer));
 WindLayer.registerRenderer('webgl', Renderer);
+//# sourceMappingURL=index.js.map
 
 exports.WindLayer = WindLayer;
 exports.clamp = clamp;

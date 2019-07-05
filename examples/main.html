@@ -30,7 +30,6 @@
 </head>
 <body>
 <div id="map"></div>
-<canvas id='wind'></canvas>
 <!--<script src="../node_modules/maptalks/dist/maptalks.js"></script>-->
 <script src="https://cdn.jsdelivr.net/npm/maptalks@0.44.2/dist/maptalks.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.6/build/dat.gui.min.js"></script>
@@ -76,7 +75,6 @@
     speedFactor: 0.25,
     dropRate: 0.003,
     dropRateBump: 0.01,
-    composite: true,
     colorRamp: {
       0.0: '#3288bd',
       0.1: '#66c2a5',
@@ -105,7 +103,6 @@
   var layer = new maptalks.WindLayer('1', null, {
     animation: true,
     renderer: 'webgl',
-    composite: true,
     spatialReference:{
       projection:'EPSG:4326'
     }
@@ -117,7 +114,7 @@
   gui.add(config, 'numParticles', 1024, 589824).onChange(() => {
     layer.setOptions(config);
   });
-  gui.add(config, 'fadeOpacity', 0.96, 0.999, 0.001).updateDisplay().onChange(() => {
+  gui.add(config, 'fadeOpacity', 0, 0.999, 0.001).updateDisplay().onChange(() => {
     layer.setOptions(config);
   });
   gui.add(config, 'speedFactor', 0.05, 1.0).onChange(() => {
@@ -127,10 +124,6 @@
     layer.setOptions(config);
   });
   gui.add(config, 'dropRateBump', 0, 0.2).onChange(() => {
-    layer.setOptions(config);
-  });
-
-  gui.add(config, 'composite').onChange(() => {
     layer.setOptions(config);
   });
 

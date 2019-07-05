@@ -8,8 +8,11 @@ const _options = {
   doubleBuffer: false,
   animation: true,
   glOptions: {
+    antialias: false,
+    depth: false,
+    stencil: false,
     alpha: true,
-    antialias: true,
+    premultipliedAlpha: true,
     preserveDrawingBuffer: true,
   },
 };
@@ -106,7 +109,7 @@ class WindLayer extends maptalks.CanvasLayer {
     const mercatorMatrix = this.calcMatrices(map);
     if (!this.wind) {
       if (!ctx) return;
-      const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles, composite } = this.options;
+      const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles } = this.options;
       this.wind = new WindGL(gl, {
         fadeOpacity,
         speedFactor,
@@ -114,20 +117,24 @@ class WindLayer extends maptalks.CanvasLayer {
         dropRateBump,
         colorRamp,
         numParticles,
-        composite,
       });
     }
 
     if (this.wind) {
-      const fullExtent = map.getFullExtent();
-      const extent = map.getProjExtent();
-      const fullMin = Math.min(fullExtent.xmax, fullExtent.xmin);
-      const min = Math.min(extent.xmax, extent.xmin);
-      const fullMax = Math.max(fullExtent.xmax, fullExtent.xmin);
-      const max = Math.max(extent.xmax, extent.xmin);
-      const total = fullMax - fullMin;
-      const eastIter = Math.max(0, Math.ceil((max - fullMax) / total));
-      const westIter = Math.max(0, Math.ceil((min - fullMin) / -total));
+      const extent = map.getExtent();
+      const min = extent.getMin();
+      const max = extent.getMax();
+      const eastIter = Math.max(0, Math.ceil((max.x - 180) / 360));
+      const westIter = Math.max(0, Math.ceil((min.x + 180) / -360));
+      // const fullExtent = map.getFullExtent();
+      // const extent = map.getProjExtent();
+      // const fullMin = Math.min(fullExtent.xmax, fullExtent.xmin);
+      // const min = Math.min(extent.xmax, extent.xmin);
+      // const fullMax = Math.max(fullExtent.xmax, fullExtent.xmin);
+      // const max = Math.max(extent.xmax, extent.xmin);
+      // const total = fullMax - fullMin;
+      // const eastIter = Math.max(0, Math.ceil((max - 180) / 360));
+      // const westIter = Math.max(0, Math.ceil((min + 180) / -360));
       this.wind.render(mercatorMatrix, 0);
       for (let i = 1; i <= eastIter; i++) {
         this.wind.render(mercatorMatrix, i);
@@ -180,6 +187,8 @@ class WindLayer extends maptalks.CanvasLayer {
     const topHalfSurfaceDistance = Math.sin(halfFov) *
       cameraToCenterDistance / Math.sin(Math.PI - groundAngle - halfFov);
     const center = this.project(map.getCenter(), worldSize);
+    // const _center = map._prjToPoint(map._getPrjCenter(), map.getMaxZoom());
+    // console.log(_center);
     const x = center.x;
     const y = center.y;
 
@@ -207,9 +216,6 @@ class WindLayer extends maptalks.CanvasLayer {
   }
 
   onResize() {
-    if (this.wind) {
-      this.wind.resize();
-    }
     super.onResize();
   }
 

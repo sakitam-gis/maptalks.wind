@@ -3944,10 +3944,9 @@ map-visit@^1.0.0:
   dependencies:
     object-visit "^1.0.0"
 
-maptalks@^0.44.2:
+"maptalks@git+http://gitlab.moji.com/moji-fe/maptalks.js.git#20190703-0":
   version "0.44.2"
-  resolved "https://registry.npm.taobao.org/maptalks/download/maptalks-0.44.2.tgz#1fde45b4a64356ee340aab99e6e628ae60e38e31"
-  integrity sha1-H95FtKZDVu40CquZ5uYormDjjjE=
+  resolved "git+http://gitlab.moji.com/moji-fe/maptalks.js.git#3187934803fcbc8a5d9af59d38b04ca9b277782d"
   dependencies:
     "@maptalks/feature-filter" "^1.0.0"
     "@maptalks/function-type" "^1.1.0"
@@ -4944,6 +4943,11 @@ regjsparser@^0.6.0:
   resolved "http://registry.npm.taobao.org/regjsparser/download/regjsparser-0.6.0.tgz#f1e6ae8b7da2bae96c99399b868cd6c933a2ba9c"
   dependencies:
     jsesc "~0.5.0"
+
+regl@^1.3.11:
+  version "1.3.11"
+  resolved "https://registry.npm.taobao.org/regl/download/regl-1.3.11.tgz#515e5173ffdc0618f908dd4e338a34ae9555f745"
+  integrity sha1-UV5Rc//cBhj5CN1OM4o0rpVV90U=
 
 remap-istanbul@^0.10:
   version "0.10.1"
