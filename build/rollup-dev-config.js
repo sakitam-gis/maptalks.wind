@@ -2,22 +2,7 @@ const serve = require('rollup-plugin-serve');
 const { _package, banner } = require('./helper');
 const baseConfig = require('./rollup-base-config');
 
-baseConfig.plugins.push(// Default options
-  serve({
-    open: true,
-    contentBase: [
-      'examples', 'dist',
-      'node_modules/maptalks/dist'
-    ],
-    host: 'localhost',
-    port: 3003,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-    }
-  })
-);
-
-module.exports = Object.assign(baseConfig, {
+const config = Object.assign({}, baseConfig, {
   output: [
     {
       file: _package.main,
@@ -49,3 +34,23 @@ module.exports = Object.assign(baseConfig, {
     }
   ]
 });
+
+if (process.env.NODE_ENV === 'development') {
+  config.plugins.push(// Default options
+    serve({
+      open: true,
+      contentBase: [
+        'examples',
+        'dist',
+        'node_modules/maptalks/dist'
+      ],
+      host: 'localhost',
+      port: 3003,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      }
+    })
+  );
+}
+
+module.exports = config;

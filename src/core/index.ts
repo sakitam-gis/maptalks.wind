@@ -1,5 +1,5 @@
 // from https://github.com/mapbox/webgl-wind/blob/c1fa1316f7/src/index.js
-
+import { mat4 } from 'gl-matrix';
 import {
   bindTexture,
   createBuffer,
@@ -17,7 +17,9 @@ import screenFrag from '../shaders/screen.fragment.glsl';
 import updateVert from '../shaders/update.vertex.glsl';
 import updateFrag from '../shaders/update.fragment.glsl';
 
-function getColorRamp(colors: {}) {
+// const NO_TRANSFORM = {dx: 0, dy: 0, scale: 1};
+
+function getColorRamp(colors: any) {
   const canvas = document.createElement('canvas');
   const ctx: any = canvas.getContext('2d');
   canvas.width = 256;
@@ -120,7 +122,7 @@ class WindGL {
     const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles } = options;
     this.options = options;
     this.gl = gl;
-    this.fadeOpacity = fadeOpacity || 0.996; // how fast the particle trails fade on each frame
+    this.fadeOpacity = fadeOpacity || 0.895; // how fast the particle trails fade on each frame
     this.speedFactor = speedFactor || 0.25; // how fast the particles move
     this.dropRate = dropRate || 0.003; // how often the particles move to a random place
     // drop rate increase relative to individual particle speed
@@ -204,10 +206,15 @@ class WindGL {
     const windData = this.windData;
     if (!gl || !windData) { return; }
     this.matrix = matrix;
+    const blendingEnabled = gl.isEnabled(gl.BLEND);
+    gl.disable(gl.BLEND);
+    gl.disable(gl.DEPTH_TEST);
+    gl.disable(gl.STENCIL_TEST);
     bindTexture(gl, this.windTexture, 0);
     bindTexture(gl, this.particleStateTexture0, 1);
     this.drawScreen(matrix, dateLineOffset);
     this.updateParticles();
+    if (blendingEnabled) { gl.enable(gl.BLEND); }
   }
 
   // @ts-ignore
@@ -297,6 +304,92 @@ class WindGL {
     const temp = this.particleStateTexture0;
     this.particleStateTexture0 = this.particleStateTexture1;
     this.particleStateTexture1 = temp;
+  }
+
+  public static wrap(n: number, min: number, max: number): number {
+    const d = max - min;
+    const w = ((n - min) % d + d) % d + min;
+    return (w === min) ? max : w;
+  }
+
+  public static clamp(n: number, min: number, max: number): number {
+    return Math.min(max, Math.max(min, n));
+  }
+
+  public static mercatorXfromLng(lng: number): number {
+    return (180 + lng) / 360;
+  }
+
+  public static mercatorYfromLat(lat: number): number {
+    return (180 - (180 / Math.PI * Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360)))) / 360;
+  }
+
+  public static project(lnglat: number[], worldSize: number): number[] {
+    const lat = WindGL.clamp(lnglat[1], -90, 90);
+    return [
+      WindGL.mercatorXfromLng(lnglat[0]) * worldSize,
+      WindGL.mercatorYfromLat(lat) * worldSize,
+    ];
+  }
+
+  public static calcMatrices(
+    viewCenter: number[],
+    zoom: number,
+    viewPitch: number,
+    bearing: number,
+    viewFov: number,
+    size: {
+      width: number;
+      height: number;
+      [key: string]: any;
+    },
+  ) {
+    const p = viewPitch;
+    const fov = viewFov * Math.PI / 180; // 0.6435011087932844
+    const { width, height } = size;
+    const pitch = WindGL.clamp(p, 0, 85) / 180 * Math.PI;
+    const angle = -WindGL.wrap(bearing, -180, 180) * Math.PI / 180;
+    const scale = Math.pow(2, zoom - 1);
+
+    const worldSize = 512 * scale;
+
+    const cameraToCenterDistance = 0.5 / Math.tan(fov / 2) * height;
+
+    // Find the distance from the center point [width/2, height/2] to the
+    // center top point [width/2, 0] in Z units, using the law of sines.
+    // 1 Z unit is equivalent to 1 horizontal px at the center of the map
+    // (the distance between[width/2, height/2] and [width/2 + 1, height/2])
+    const halfFov = fov / 2;
+    const groundAngle = Math.PI / 2 + pitch;
+    const topHalfSurfaceDistance = Math.sin(halfFov) *
+      cameraToCenterDistance / Math.sin(Math.PI - groundAngle - halfFov);
+    const center = WindGL.project(viewCenter, worldSize);
+    // const _center = map._prjToPoint(map._getPrjCenter(), map.getMaxZoom());
+    // console.log(_center);
+    const x = center[0];
+    const y = center[1];
+
+    // Calculate z distance of the farthest fragment that should be rendered.
+    const furthestDistance = Math.cos(Math.PI / 2 - pitch) * topHalfSurfaceDistance + cameraToCenterDistance;
+    // Add a bit extra to avoid precision problems when a fragment's distance is exactly `furthestDistance`
+    const farZ = furthestDistance * 1.01;
+
+    // matrix for conversion from location to GL coordinates (-1 .. 1)
+    const m = new Float64Array(16);
+    mat4.perspective(m, fov, width / height, 1, farZ);
+
+    mat4.scale(m, m, [1, -1, 1]);
+    mat4.translate(m, m, [0, 0, -cameraToCenterDistance]);
+    mat4.rotateX(m, m, pitch);
+    mat4.rotateZ(m, m, angle);
+    mat4.translate(m, m, [-x, -y, 0]);
+
+    // The mercatorMatrix can be used to transform points from mercator coordinates
+    // ([0, 0] nw, [1, 1] se) to GL coordinates.
+    // const mercatorMatrix = mat4.scale([], m, [worldSize, worldSize, worldSize]);
+    // scale vertically to meters per pixel (inverse of ground resolution):
+    // mat4.scale(m, m, [1, 1, mercatorZfromAltitude(1, this.center.lat) * this.worldSize, 1]);
+    return mat4.scale([], m, [worldSize, worldSize, worldSize]);
   }
 }
 

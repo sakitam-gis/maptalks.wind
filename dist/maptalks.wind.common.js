@@ -1,7 +1,7 @@
 /*!
  * author: sakitam-fdd <smilefdd@gmail.com> 
  * maptalks.wind v0.0.1
- * build-time: 2019-7-5 13:39
+ * build-time: 2019-7-5 18:39
  * LICENSE: MIT
  * (c) 2018-2019 
  */
@@ -926,9 +926,8 @@ function bindFramebuffer(gl, framebuffer, texture) {
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
     }
 }
-//# sourceMappingURL=utils.js.map
 
-var drawVert = "precision mediump float;\n#define GLSLIFY 1\n\nattribute float a_index;\n\nuniform sampler2D u_particles;\nuniform float u_particles_res;\n\nuniform mat4 u_matrix;\nuniform float u_dateline_offset;\n\nvarying vec2 v_particle_pos;\n\nvoid main() {\n  vec4 color = texture2D(u_particles, vec2(\n  fract(a_index / u_particles_res),\n  floor(a_index / u_particles_res) / u_particles_res));\n\n  v_particle_pos = vec2(\n  color.r / 255.0 + color.b,\n  color.g / 255.0 + color.a);\n  gl_PointSize = 1.0;\n  gl_Position = u_matrix * vec4(v_particle_pos.xy + vec2(u_dateline_offset, 0), 0, 1);\n}\n"; // eslint-disable-line
+var drawVert = "precision mediump float;\n#define GLSLIFY 1\n\nattribute float a_index;\n\nuniform sampler2D u_particles;\nuniform float u_particles_res;\n\nuniform mat4 u_matrix;\nuniform float u_dateline_offset;\n\nvarying vec2 v_particle_pos;\n\nvoid main() {\n  vec4 color = texture2D(\n    u_particles,\n    vec2(\n      fract(a_index / u_particles_res),\n      floor(a_index / u_particles_res) / u_particles_res\n    )\n  );\n\n  v_particle_pos = vec2(\n    color.r / 255.0 + color.b,\n    color.g / 255.0 + color.a\n  );\n  gl_PointSize = 1.0;\n  gl_Position = u_matrix * vec4(v_particle_pos.xy + vec2(u_dateline_offset, 0), 0, 1);\n}\n"; // eslint-disable-line
 
 var drawFrag = "precision mediump float;\n#define GLSLIFY 1\n\nuniform sampler2D u_wind;\nuniform vec2 u_wind_min;\nuniform vec2 u_wind_max;\nuniform sampler2D u_color_ramp;\n\nvarying vec2 v_particle_pos;\n\nvoid main() {\n  vec2 velocity = mix(u_wind_min, u_wind_max, texture2D(u_wind, v_particle_pos).rg);\n  float speed_t = length(velocity) / length(u_wind_max);\n\n  // color ramp is encoded in a 16x16 texture\n  vec2 ramp_pos = vec2(\n  fract(16.0 * speed_t),\n  floor(16.0 * speed_t) / 16.0);\n\n  gl_FragColor = texture2D(u_color_ramp, ramp_pos);\n}\n"; // eslint-disable-line
 
@@ -968,7 +967,7 @@ var WindGL = (function () {
         var fadeOpacity = options.fadeOpacity, speedFactor = options.speedFactor, dropRate = options.dropRate, dropRateBump = options.dropRateBump, colorRamp = options.colorRamp, numParticles = options.numParticles;
         this.options = options;
         this.gl = gl;
-        this.fadeOpacity = fadeOpacity || 0.996;
+        this.fadeOpacity = fadeOpacity || 0.895;
         this.speedFactor = speedFactor || 0.25;
         this.dropRate = dropRate || 0.003;
         this.dropRateBump = dropRateBump || 0.01;
@@ -1045,10 +1044,17 @@ var WindGL = (function () {
             return;
         }
         this.matrix = matrix;
+        var blendingEnabled = gl.isEnabled(gl.BLEND);
+        gl.disable(gl.BLEND);
+        gl.disable(gl.DEPTH_TEST);
+        gl.disable(gl.STENCIL_TEST);
         bindTexture(gl, this.windTexture, 0);
         bindTexture(gl, this.particleStateTexture0, 1);
         this.drawScreen(matrix, dateLineOffset);
         this.updateParticles();
+        if (blendingEnabled) {
+            gl.enable(gl.BLEND);
+        }
     };
     WindGL.prototype.drawScreen = function (matrix, dateLineOffset) {
         var gl = this.gl;
@@ -1115,6 +1121,54 @@ var WindGL = (function () {
         this.particleStateTexture0 = this.particleStateTexture1;
         this.particleStateTexture1 = temp;
     };
+    WindGL.wrap = function (n, min, max) {
+        var d = max - min;
+        var w = ((n - min) % d + d) % d + min;
+        return (w === min) ? max : w;
+    };
+    WindGL.clamp = function (n, min, max) {
+        return Math.min(max, Math.max(min, n));
+    };
+    WindGL.mercatorXfromLng = function (lng) {
+        return (180 + lng) / 360;
+    };
+    WindGL.mercatorYfromLat = function (lat) {
+        return (180 - (180 / Math.PI * Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360)))) / 360;
+    };
+    WindGL.project = function (lnglat, worldSize) {
+        var lat = WindGL.clamp(lnglat[1], -90, 90);
+        return [
+            WindGL.mercatorXfromLng(lnglat[0]) * worldSize,
+            WindGL.mercatorYfromLat(lat) * worldSize,
+        ];
+    };
+    WindGL.calcMatrices = function (viewCenter, zoom, viewPitch, bearing, viewFov, size) {
+        var p = viewPitch;
+        var fov = viewFov * Math.PI / 180;
+        var width = size.width, height = size.height;
+        var pitch = WindGL.clamp(p, 0, 85) / 180 * Math.PI;
+        var angle = -WindGL.wrap(bearing, -180, 180) * Math.PI / 180;
+        var scale$1 = Math.pow(2, zoom - 1);
+        var worldSize = 512 * scale$1;
+        var cameraToCenterDistance = 0.5 / Math.tan(fov / 2) * height;
+        var halfFov = fov / 2;
+        var groundAngle = Math.PI / 2 + pitch;
+        var topHalfSurfaceDistance = Math.sin(halfFov) *
+            cameraToCenterDistance / Math.sin(Math.PI - groundAngle - halfFov);
+        var center = WindGL.project(viewCenter, worldSize);
+        var x = center[0];
+        var y = center[1];
+        var furthestDistance = Math.cos(Math.PI / 2 - pitch) * topHalfSurfaceDistance + cameraToCenterDistance;
+        var farZ = furthestDistance * 1.01;
+        var m = new Float64Array(16);
+        perspective(m, fov, width / height, 1, farZ);
+        scale(m, m, [1, -1, 1]);
+        translate(m, m, [0, 0, -cameraToCenterDistance]);
+        rotateX(m, m, pitch);
+        rotateZ(m, m, angle);
+        translate(m, m, [-x, -y, 0]);
+        return scale([], m, [worldSize, worldSize, worldSize]);
+    };
     return WindGL;
 }());
 
@@ -1155,7 +1209,6 @@ var createContext = function (canvas, glOptions) {
     }
     return null;
 };
-//# sourceMappingURL=index.js.map
 
 var Renderer = (function (_super) {
     __extends(Renderer, _super);
@@ -1311,7 +1364,6 @@ var Renderer = (function (_super) {
     };
     return Renderer;
 }(maptalks.renderer.CanvasLayerRenderer));
-//# sourceMappingURL=renderer.js.map
 
 var _options = {
     renderer: 'webgl',
@@ -1326,20 +1378,6 @@ var _options = {
         preserveDrawingBuffer: true,
     },
 };
-function wrap(n, min, max) {
-    var d = max - min;
-    var w = ((n - min) % d + d) % d + min;
-    return (w === min) ? max : w;
-}
-function clamp(n, min, max) {
-    return Math.min(max, Math.max(min, n));
-}
-function mercatorXfromLng(lng) {
-    return (180 + lng) / 360;
-}
-function mercatorYfromLat(lat) {
-    return (180 - (180 / Math.PI * Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360)))) / 360;
-}
 var WindLayer = (function (_super) {
     __extends(WindLayer, _super);
     function WindLayer(id, datas, options) {
@@ -1372,7 +1410,20 @@ var WindLayer = (function (_super) {
         var map = this.getMap();
         if (!map)
             return;
-        var mercatorMatrix = this.calcMatrices(map);
+        var center = map.getCenter();
+        var size = map.getSize();
+        var zoom = map.getZoom();
+        var p = map.getPitch();
+        var bearing = map.getBearing();
+        var fov = map.getFov();
+        var extent = map.getProjExtent();
+        var min = extent.getMin();
+        var max = extent.getMax();
+        var proj = map.getSpatialReference().getProjection();
+        var metersPerDegree = proj.metersPerDegree || (6378137 * Math.PI / 180);
+        var mercatorMatrix = WindGL.calcMatrices([
+            center.x, center.y,
+        ], zoom, p, bearing, fov, size);
         if (!this.wind) {
             if (!ctx)
                 return;
@@ -1387,17 +1438,17 @@ var WindLayer = (function (_super) {
             });
         }
         if (this.wind) {
-            var extent = map.getExtent();
-            var min = extent.getMin();
-            var max = extent.getMax();
-            var eastIter = Math.max(0, Math.ceil((max.x - 180) / 360));
-            var westIter = Math.max(0, Math.ceil((min.x + 180) / -360));
+            var projCenter = map._getPrjCenter();
+            var xmin = (min.x - projCenter.x) / metersPerDegree;
+            var xmax = (max.x - projCenter.x) / metersPerDegree;
+            var eastIter = Math.max(0, Math.ceil((xmax - 180) / 360));
+            var westIter = Math.max(0, Math.ceil((xmin + 180) / -360));
             this.wind.render(mercatorMatrix, 0);
             for (var i = 1; i <= eastIter; i++) {
                 this.wind.render(mercatorMatrix, i);
             }
-            for (var i = 1; i <= westIter; i++) {
-                this.wind.render(mercatorMatrix, -i);
+            for (var j = 1; j <= westIter; j++) {
+                this.wind.render(mercatorMatrix, -j);
             }
         }
         ctx.drawImage(gl.canvas, 0, 0);
@@ -1405,40 +1456,6 @@ var WindLayer = (function (_super) {
     };
     WindLayer.prototype.drawOnInteracting = function (ctx, gl) {
         this.draw(ctx, gl);
-    };
-    WindLayer.prototype.project = function (lnglat, worldSize) {
-        var lat = clamp(lnglat.y, -90, 90);
-        return new maptalks.Point(mercatorXfromLng(lnglat.x) * worldSize, mercatorYfromLat(lat) * worldSize);
-    };
-    WindLayer.prototype.calcMatrices = function (map) {
-        var size = map.getSize();
-        var zoom = map.getZoom();
-        var p = map.getPitch();
-        var bearing = map.getBearing();
-        var fov = map.getFov() * Math.PI / 180;
-        var width = size.width, height = size.height;
-        var pitch = clamp(p, 0, 85) / 180 * Math.PI;
-        var angle = -wrap(bearing, -180, 180) * Math.PI / 180;
-        var scale$1 = Math.pow(2, zoom - 1);
-        var worldSize = 512 * scale$1;
-        var cameraToCenterDistance = 0.5 / Math.tan(fov / 2) * height;
-        var halfFov = fov / 2;
-        var groundAngle = Math.PI / 2 + pitch;
-        var topHalfSurfaceDistance = Math.sin(halfFov) *
-            cameraToCenterDistance / Math.sin(Math.PI - groundAngle - halfFov);
-        var center = this.project(map.getCenter(), worldSize);
-        var x = center.x;
-        var y = center.y;
-        var furthestDistance = Math.cos(Math.PI / 2 - pitch) * topHalfSurfaceDistance + cameraToCenterDistance;
-        var farZ = furthestDistance * 1.01;
-        var m = new Float64Array(16);
-        perspective(m, fov, width / height, 1, farZ);
-        scale(m, m, [1, -1, 1]);
-        translate(m, m, [0, 0, -cameraToCenterDistance]);
-        rotateX(m, m, pitch);
-        rotateZ(m, m, angle);
-        translate(m, m, [-x, -y, 0]);
-        return scale([], m, [worldSize, worldSize, worldSize]);
     };
     WindLayer.prototype.onResize = function () {
         _super.prototype.onResize.call(this);
@@ -1449,11 +1466,6 @@ var WindLayer = (function (_super) {
     return WindLayer;
 }(maptalks.CanvasLayer));
 WindLayer.registerRenderer('webgl', Renderer);
-//# sourceMappingURL=index.js.map
 
 exports.WindLayer = WindLayer;
-exports.clamp = clamp;
-exports.mercatorXfromLng = mercatorXfromLng;
-exports.mercatorYfromLat = mercatorYfromLat;
-exports.wrap = wrap;
 //# sourceMappingURL=maptalks.wind.common.js.map

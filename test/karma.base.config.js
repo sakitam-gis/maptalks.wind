@@ -20,7 +20,7 @@ module.exports = function(config) {
       { pattern: 'src/**/*.ts' },
       // { pattern: '../src/**/*.+(ts|tsx)' },
       // { pattern: '../test/**/*.+(ts|tsx)' },
-      { pattern: './spec/**/*.ts' },
+      { pattern: 'test/spec/**/*.ts' },
       // '../src/**/*.ts', '../test/**/*.ts'
     ],
 
@@ -35,7 +35,7 @@ module.exports = function(config) {
       // '../node_modules/maptalks/**/*.js': ['rollup'],
       'src/**/*.ts': ['karma-typescript'],
       // '../src/**/*.ts': ['rollup', 'coverage'],
-      'spec/**/*.ts': ['karma-typescript'],
+      'test/spec/**/*.ts': ['karma-typescript'],
     },
 
     karmaTypescriptConfig: {
@@ -69,7 +69,7 @@ module.exports = function(config) {
         },
         'text': null
       },
-      tsconfig: '../tsconfig.test.json'
+      tsconfig: 'tsconfig.test.json'
     },
 
     // karmaTypescriptConfig: {

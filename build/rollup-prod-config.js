@@ -2,7 +2,7 @@ const { _package, banner, handleMinEsm } = require('./helper');
 const baseConfig = require('./rollup-base-config');
 const { uglify }  = require('rollup-plugin-uglify');
 
-const config = Object.assign(baseConfig, {
+const config = Object.assign({}, baseConfig, {
   output: [
     {
       file: handleMinEsm(_package.main),

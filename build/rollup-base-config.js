@@ -26,6 +26,7 @@ module.exports = {
     }),
     typescript({
       clean: true,
+      tsconfig: 'tsconfig.json',
       useTsconfigDeclarationDir: true,
     }),
     glslify({ basedir: 'src/shaders' }),

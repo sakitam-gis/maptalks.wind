@@ -1,5 +1,15 @@
 {
   "compilerOptions": {
+    "paths": {
+      "*": [
+        "types/*",
+        "typings/*"
+      ],
+      "gl-matrix": ["node_modules/gl-matrix/esm/index.js"],
+      "maptalks": ["node_modules/maptalks/dist/maptalks.es.js"]
+    },
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
     "target": "es2018",
     "module": "es2015",
     "lib": [
@@ -17,7 +27,7 @@
   },
   "include": [
     "src/**/*.ts",
-    "test/**/*.ts",
+    "test/**/*.ts"
   ],
   "exclude": [
     "node_modules"

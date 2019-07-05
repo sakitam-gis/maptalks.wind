@@ -17,6 +17,7 @@
     "noUnusedLocals": true,
     "noImplicitAny": true,
     "declaration": false,
+    "composite": false,
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "outDir": "dist",

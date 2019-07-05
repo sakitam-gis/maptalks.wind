@@ -18,7 +18,7 @@ function createProgram(gl: WebGLRenderingContext, vertexSource: string, fragment
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     throw new Error(gl.getProgramInfoLog(program) || '');
   }
-  const wrapper = {
+  const wrapper: any = {
     program,
   };
   const numAttributes = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
