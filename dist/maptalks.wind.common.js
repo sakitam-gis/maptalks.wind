@@ -1,7 +1,7 @@
 /*!
  * author: sakitam-fdd <smilefdd@gmail.com> 
  * maptalks.wind v0.0.1
- * build-time: 2019-7-5 18:39
+ * build-time: 2019-7-14 16:47
  * LICENSE: MIT
  * (c) 2018-2019 
  */
@@ -1468,4 +1468,3 @@ var WindLayer = (function (_super) {
 WindLayer.registerRenderer('webgl', Renderer);
 
 exports.WindLayer = WindLayer;
-//# sourceMappingURL=maptalks.wind.common.js.map
