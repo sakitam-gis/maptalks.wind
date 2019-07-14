@@ -48,7 +48,13 @@
     // pitch: 45,
     hitDetect: false,
     centerCross: true,
+    // spatialReference:{
+    //   // projection:'EPSG:4326'
+    // },
     baseLayer: new maptalks.TileLayer('tile', {
+      // spatialReference:{
+      //   projection:'EPSG:3857'
+      // },
       'urlTemplate': 'https://map.geoq.cn/arcgis/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x}',
       // 'subdomains': ['a', 'b', 'c', 'd'],
     })
@@ -93,11 +99,17 @@
     animation: true,
     renderer: 'webgl',
     spatialReference:{
-      projection:'EPSG:4326'
+      projection:'EPSG:3857'
     }
   });
 
   map.addLayer(layer);
+
+  map.on('mousemove', function (event) {
+    console.log(event);
+    const value = layer.getValue(event.coordinate);
+    console.log(value);
+  });
 
   const gui = new dat.GUI();
   gui.add(config, 'numParticles', 1024, 589824).onChange(() => {

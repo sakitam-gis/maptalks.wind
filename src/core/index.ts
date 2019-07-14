@@ -107,7 +107,7 @@ class WindGL {
   private screenProgram: any;
   private updateProgram: any;
   private quadBuffer: WebGLBuffer|null;
-  private framebuffer: WebGLFramebuffer|null;
+  public framebuffer: WebGLFramebuffer|null;
 
   private screenTexture: WebGLTexture|null;
   private colorRampTexture: WebGLTexture|null;

@@ -1,5 +1,5 @@
 const CONTEXT_TYPES = [
-  'webgl2',
+  // 'webgl2',
   'experimental-webgl',
   'webgl',
   'webkit-3d',

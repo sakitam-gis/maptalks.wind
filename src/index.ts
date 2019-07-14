@@ -2,6 +2,11 @@ import { CanvasLayer } from 'maptalks';
 import WindGL from './core/index';
 import Renderer from './render/renderer';
 
+const MAX_RES = 2 * 6378137 * Math.PI / (256 * Math.pow(2, 20));
+function getMapBoxZoom(res: number) {
+  return 19 - Math.log(res / MAX_RES) / Math.LN2;
+}
+
 const _options = {
   renderer: 'webgl',
   doubleBuffer: false,
@@ -89,7 +94,8 @@ class WindLayer extends CanvasLayer {
     if (!map) return;
     const center = map.getCenter();
     const size = map.getSize();
-    const zoom = map.getZoom();
+    // const zoom = map.getZoom();
+    const zoom = getMapBoxZoom(map.getResolution());
     const p = map.getPitch();
     const bearing = map.getBearing();
     const fov = map.getFov();
@@ -149,6 +155,30 @@ class WindLayer extends CanvasLayer {
 
   remove() {
     super.remove();
+  }
+
+  getValue(coordinates: any) {
+    if (this.wind && this.wind.framebuffer) {
+      // from: https://github.com/liubgithub/maptalks.wind/blob/master/src/WindLayerRenderer.js#L574
+      const data = this.datas.data;
+      const t = coordinates.x % 180;
+      const pixelX = ((t + 180) / 360) * data.width;
+      if (coordinates.y < -90 || coordinates.y > 90) {
+        throw new Error('Invalid y for coordinate');
+      }
+      const pixelY = ((90 - coordinates.y) / 180) * data.height;
+      // end
+      // const xy = this.map.coordinateToContainerPoint(coordinates);
+      const gl = this.wind.gl;
+      // https://developer.mozilla.org/zh-CN/docs/Web/API/WebGLRenderingContext/pixelStorei
+      gl.pixelStorei(gl.PACK_ALIGNMENT || 0x0D05, 4);
+
+      // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
+      const pixels = new Uint8Array(4);
+      gl.readPixels(pixelX, pixelY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      return pixels;
+    }
+    return null;
   }
 }
 
