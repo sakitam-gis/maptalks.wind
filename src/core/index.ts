@@ -1,5 +1,4 @@
 // from https://github.com/mapbox/webgl-wind/blob/c1fa1316f7/src/index.js
-import { mat4 } from 'gl-matrix';
 import {
   bindTexture,
   createBuffer,
@@ -201,7 +200,7 @@ class WindGL {
     this.windTexture = createTexture(this.gl, this.gl.LINEAR, image);
   }
 
-  render(matrix: number[], dateLineOffset: number) {
+  render(matrix: number[], dateLineOffset: number, params: any) {
     const gl = this.gl;
     const windData = this.windData;
     if (!gl || !windData) { return; }
@@ -212,20 +211,20 @@ class WindGL {
     gl.disable(gl.STENCIL_TEST);
     bindTexture(gl, this.windTexture, 0);
     bindTexture(gl, this.particleStateTexture0, 1);
-    this.drawScreen(matrix, dateLineOffset);
+    this.drawScreen(matrix, dateLineOffset, params);
     this.updateParticles();
     if (blendingEnabled) { gl.enable(gl.BLEND); }
   }
 
   // @ts-ignore
-  drawScreen(matrix: number[], dateLineOffset: number) {
+  drawScreen(matrix: number[], dateLineOffset: number, params: any) {
     const gl = this.gl;
     // draw the screen into a temporary framebuffer to retain it as the background on the next frame
     bindFramebuffer(gl, this.framebuffer, this.screenTexture);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     this.drawTexture(this.backgroundTexture, this.fadeOpacity);
-    this.drawParticles(matrix, dateLineOffset);
+    this.drawParticles(matrix, dateLineOffset, params);
 
     bindFramebuffer(gl, null);
 
@@ -261,7 +260,7 @@ class WindGL {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
-  drawParticles(matrix: number[], dateLineOffset: number) {
+  drawParticles(matrix: number[], dateLineOffset: number, params: any) {
     const gl = this.gl;
     const program = this.drawProgram;
     gl.useProgram(program.program);
@@ -276,6 +275,11 @@ class WindGL {
     gl.uniform2f(program.u_wind_min, this.windData.uMin, this.windData.vMin);
     gl.uniform2f(program.u_wind_max, this.windData.uMax, this.windData.vMax);
     gl.uniform1f(program.u_dateline_offset, dateLineOffset);
+
+    gl.uniform1f(program.transformScale, params.transformScale);
+    gl.uniform2fv(program.projectionExtent, [params.projectionExtent[2], params.projectionExtent[3]]);
+    gl.uniform4fv(program.transformMatrix, params.transformMatrix);
+
     // 1、要修改的uniform属性的位置的对象 2、是否逆转矩阵 3、矩阵
     gl.uniformMatrix4fv(program.u_matrix, false, matrix);
     gl.drawArrays(gl.POINTS, 0, this._numParticles);
@@ -304,92 +308,6 @@ class WindGL {
     const temp = this.particleStateTexture0;
     this.particleStateTexture0 = this.particleStateTexture1;
     this.particleStateTexture1 = temp;
-  }
-
-  public static wrap(n: number, min: number, max: number): number {
-    const d = max - min;
-    const w = ((n - min) % d + d) % d + min;
-    return (w === min) ? max : w;
-  }
-
-  public static clamp(n: number, min: number, max: number): number {
-    return Math.min(max, Math.max(min, n));
-  }
-
-  public static mercatorXfromLng(lng: number): number {
-    return (180 + lng) / 360;
-  }
-
-  public static mercatorYfromLat(lat: number): number {
-    return (180 - (180 / Math.PI * Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360)))) / 360;
-  }
-
-  public static project(lnglat: number[], worldSize: number): number[] {
-    const lat = WindGL.clamp(lnglat[1], -90, 90);
-    return [
-      WindGL.mercatorXfromLng(lnglat[0]) * worldSize,
-      WindGL.mercatorYfromLat(lat) * worldSize,
-    ];
-  }
-
-  public static calcMatrices(
-    viewCenter: number[],
-    zoom: number,
-    viewPitch: number,
-    bearing: number,
-    viewFov: number,
-    size: {
-      width: number;
-      height: number;
-      [key: string]: any;
-    },
-  ) {
-    const p = viewPitch;
-    const fov = viewFov * Math.PI / 180; // 0.6435011087932844
-    const { width, height } = size;
-    const pitch = WindGL.clamp(p, 0, 85) / 180 * Math.PI;
-    const angle = -WindGL.wrap(bearing, -180, 180) * Math.PI / 180;
-    const scale = Math.pow(2, zoom - 1);
-
-    const worldSize = 512 * scale;
-
-    const cameraToCenterDistance = 0.5 / Math.tan(fov / 2) * height;
-
-    // Find the distance from the center point [width/2, height/2] to the
-    // center top point [width/2, 0] in Z units, using the law of sines.
-    // 1 Z unit is equivalent to 1 horizontal px at the center of the map
-    // (the distance between[width/2, height/2] and [width/2 + 1, height/2])
-    const halfFov = fov / 2;
-    const groundAngle = Math.PI / 2 + pitch;
-    const topHalfSurfaceDistance = Math.sin(halfFov) *
-      cameraToCenterDistance / Math.sin(Math.PI - groundAngle - halfFov);
-    const center = WindGL.project(viewCenter, worldSize);
-    // const _center = map._prjToPoint(map._getPrjCenter(), map.getMaxZoom());
-    // console.log(_center);
-    const x = center[0];
-    const y = center[1];
-
-    // Calculate z distance of the farthest fragment that should be rendered.
-    const furthestDistance = Math.cos(Math.PI / 2 - pitch) * topHalfSurfaceDistance + cameraToCenterDistance;
-    // Add a bit extra to avoid precision problems when a fragment's distance is exactly `furthestDistance`
-    const farZ = furthestDistance * 1.01;
-
-    // matrix for conversion from location to GL coordinates (-1 .. 1)
-    const m = new Float64Array(16);
-    mat4.perspective(m, fov, width / height, 1, farZ);
-
-    mat4.scale(m, m, [1, -1, 1]);
-    mat4.translate(m, m, [0, 0, -cameraToCenterDistance]);
-    mat4.rotateX(m, m, pitch);
-    mat4.rotateZ(m, m, angle);
-    mat4.translate(m, m, [-x, -y, 0]);
-
-    // The mercatorMatrix can be used to transform points from mercator coordinates
-    // ([0, 0] nw, [1, 1] se) to GL coordinates.
-    // const mercatorMatrix = mat4.scale([], m, [worldSize, worldSize, worldSize]);
-    // scale vertically to meters per pixel (inverse of ground resolution):
-    // mat4.scale(m, m, [1, 1, mercatorZfromAltitude(1, this.center.lat) * this.worldSize, 1]);
-    return mat4.scale([], m, [worldSize, worldSize, worldSize]);
   }
 }
 

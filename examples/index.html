@@ -4,8 +4,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta charset="UTF-8">
   <title>map</title>
-  <!--<link rel="stylesheet" href="../node_modules/maptalks/dist/maptalks.css">-->
-  <link rel="stylesheet" href="maptalks.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dat.gui@0.7.6/build/dat.gui.css">
   <style type="text/css">
     html, body, #map {
       padding: 0;
@@ -30,8 +30,8 @@
 <body>
 <div id="map"></div>
 <canvas id='wind'></canvas>
-<!--<script src="../node_modules/maptalks/dist/maptalks.js"></script>-->
-<script src="maptalks.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.6/build/dat.gui.min.js"></script>
 <!--<script src="../dist/maptalks.wind.js"></script>-->
 <script src="maptalks.wind.js"></script>
 <script type="text/javascript">
@@ -64,26 +64,88 @@
     })
   });
 
+  const meta = {
+    '2016-11-20+h': 0,
+  };
+
+  const config = {
+    wrapX: false,
+    numParticles: 65536,
+    fadeOpacity: 0.895,
+    speedFactor: 0.25,
+    dropRate: 0.003,
+    dropRateBump: 0.01,
+    colorRamp: {
+      0.0: '#3288bd',
+      0.1: '#66c2a5',
+      0.2: '#abdda4',
+      0.3: '#e6f598',
+      0.4: '#fee08b',
+      0.5: '#fdae61',
+      0.6: '#f46d43',
+      1.0: '#d53e4f',
+    },
+    time: '2016112000',
+  };
+
+  const windFiles = {
+    0: '2016112000',
+    6: '2016112006',
+    12: '2016112012',
+    18: '2016112018',
+    24: '2016112100',
+    30: '2016112106',
+    36: '2016112112',
+    42: '2016112118',
+    48: '2016112200',
+  };
+
   var layer = new maptalks.WindLayer('1', null, {
     animation: true,
-    renderer: 'webgl',
-    spatialReference:{
-      projection:'EPSG:4326'
-    }
+    wrapX: false
   });
 
   map.addLayer(layer);
 
-  getJSON('wind/2016112000.json', function (windData) {
-    const windImage = new Image();
-    windImage.src = 'wind/2016112000.png';
-    windImage.onload = function () {
-      layer.setWindData({
-        data: windData,
-        image: windImage
-      });
-    };
+  const gui = new dat.GUI();
+
+  gui.add(config, 'wrapX').onChange(() => {
+    layer.setOptions(config);
   });
+
+  gui.add(config, 'numParticles', 1024, 589824).onChange(() => {
+    layer.setOptions(config);
+  });
+  gui.add(config, 'fadeOpacity', 0, 0.999, 0.001).updateDisplay().onChange(() => {
+    layer.setOptions(config);
+  });
+  gui.add(config, 'speedFactor', 0, 1.0).onChange(() => {
+    layer.setOptions(config);
+  });
+  gui.add(config, 'dropRate', 0, 0.1).onChange(() => {
+    layer.setOptions(config);
+  });
+  gui.add(config, 'dropRateBump', 0, 0.2).onChange(() => {
+    layer.setOptions(config);
+  });
+
+  function updateWind(name) {
+    getJSON(`./wind/${windFiles[name]}.json`, (windData) => {
+      const windImage = new Image();
+      windImage.src = `./wind/${windFiles[name]}.png`;
+      windImage.onload = () => {
+        layer.setWindData({
+          data: windData,
+          image: windImage
+        });
+        // layer.resize();
+      };
+    });
+  }
+
+  gui.add(meta, '2016-11-20+h', 0, 48, 6).onFinishChange(updateWind);
+
+  updateWind(0);
 </script>
 </body>
 </html>

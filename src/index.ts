@@ -1,16 +1,12 @@
-import { CanvasLayer } from 'maptalks';
+import { CanvasLayer, Coordinate } from 'maptalks';
 import WindGL from './core/index';
 import Renderer from './render/renderer';
 
-const MAX_RES = 2 * 6378137 * Math.PI / (256 * Math.pow(2, 20));
-function getMapBoxZoom(res: number) {
-  return 19 - Math.log(res / MAX_RES) / Math.LN2;
-}
-
 const _options = {
-  renderer: 'webgl',
+  renderer: 'gl',
   doubleBuffer: false,
   animation: true,
+  wrapX: true,
   glOptions: {
     antialias: false,
     depth: false,
@@ -89,28 +85,11 @@ class WindLayer extends CanvasLayer {
     return [];
   }
 
-  draw(ctx: CanvasRenderingContext2D, gl: WebGLRenderingContext) {
+  draw(gl: WebGLRenderingContext) {
     const map = this.getMap();
     if (!map) return;
-    const center = map.getCenter();
-    const size = map.getSize();
-    // const zoom = map.getZoom();
-    const zoom = getMapBoxZoom(map.getResolution());
-    const p = map.getPitch();
-    const bearing = map.getBearing();
-    const fov = map.getFov();
 
-    const extent = map.getProjExtent();
-    const min = extent.getMin();
-    const max = extent.getMax();
-    const proj = map.getSpatialReference().getProjection();
-    const metersPerDegree = proj.metersPerDegree || (6378137 * Math.PI / 180);
-
-    const mercatorMatrix = WindGL.calcMatrices([
-      center.x, center.y,
-    ], zoom, p, bearing, fov, size);
     if (!this.wind) {
-      if (!ctx) return;
       const { fadeOpacity, speedFactor, dropRate, dropRateBump, colorRamp, numParticles } = this.options;
       this.wind = new WindGL(gl, {
         fadeOpacity,
@@ -123,30 +102,88 @@ class WindLayer extends CanvasLayer {
     }
 
     if (this.wind) {
-      const projCenter = map._getPrjCenter();
-      const xmin = (min.x - projCenter.x) / metersPerDegree;
-      const xmax = (max.x - projCenter.x) / metersPerDegree;
-      const eastIter = Math.max(0, Math.ceil((xmax - 180) / 360));
-      const westIter = Math.max(0, Math.ceil((xmin + 180) / -360));
-      this.wind.render(mercatorMatrix, 0);
-      for (let i = 1; i <= eastIter; i++) {
-        this.wind.render(mercatorMatrix, i);
+      const scale = map.getResolution(map.getGLZoom());
+      // const proj = map.getSpatialReference().getTransformation().transform([], scale);
+      const proj = map.getSpatialReference().getTransformation();
+      // @tip this.matrix[0] * (coordinates.x - this.matrix[2]) / scale, this.matrix[1] * (coordinates.y - this.matrix[3]) / scale
+
+      const projObject = map.getProjection().fullExtent;
+      const projectionExtent = [
+        projObject.left,
+        projObject.bottom,
+        projObject.right,
+        projObject.top,
+      ];
+      const worlds = this.getWrappedWorlds();
+      // tslint:disable-next-line:prefer-for-of
+      for (let i = 0; i < worlds.length; i++) {
+        this.wind.render(map.projViewMatrix, worlds[i], {
+          transformMatrix: proj.matrix,
+          transformScale: scale,
+          projectionExtent,
+        });
       }
-      for (let j = 1; j <= westIter; j++) {
-        this.wind.render(mercatorMatrix, -j);
+    }
+  }
+
+  public getWrappedWorlds() {
+    const map = this.getMap();
+    const projObject = map.getProjection().fullExtent;
+    const projectionExtent = [
+      projObject.left,
+      projObject.bottom,
+      projObject.right,
+      projObject.top,
+    ];
+    const projExtent = map.getProjExtent();
+    const extent = [
+      projExtent.xmin,
+      projExtent.ymin,
+      projExtent.xmax,
+      projExtent.ymax,
+    ];
+    let startX = extent[0];
+    const worldWidth = projectionExtent[2] - projectionExtent[0];
+    const projWorldWidth = Math.abs(
+      map.coordToPoint(
+        map
+          .getProjection()
+          .unprojectCoords(
+            new Coordinate([projectionExtent[0], projectionExtent[1]]),
+          ),
+        map.getGLZoom(),
+      ).x -
+      map.coordToPoint(
+        map
+          .getProjection()
+          .unprojectCoords(
+            new Coordinate([projectionExtent[2], projectionExtent[3]]),
+          ),
+        map.getGLZoom(),
+      ).x,
+    );
+    let world = 0;
+
+    const result = [];
+
+    if (this.options.wrapX) {
+      while (startX < projectionExtent[0]) {
+        --world;
+        result.push(world * projWorldWidth);
+        startX += worldWidth;
+      }
+      world = 0;
+      startX = extent[2];
+      while (startX > projectionExtent[2]) {
+        ++world;
+        result.push(world * projWorldWidth);
+        startX -= worldWidth;
       }
     }
 
-    ctx.drawImage(gl.canvas, 0, 0);
+    result.push(0);
 
-    this.completeRender();
-  }
-
-  /**
-   * inter
-   */
-  drawOnInteracting(ctx: CanvasRenderingContext2D, gl: WebGLRenderingContext) {
-    this.draw(ctx, gl);
+    return result;
   }
 
   onResize() {
@@ -182,7 +219,7 @@ class WindLayer extends CanvasLayer {
   }
 }
 
-WindLayer.registerRenderer('webgl', Renderer);
+WindLayer.registerRenderer('gl', Renderer);
 
 export {
   WindLayer,

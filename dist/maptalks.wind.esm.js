@@ -1,11 +1,11 @@
 /*!
  * author: sakitam-fdd <smilefdd@gmail.com> 
  * maptalks.wind v0.0.1
- * build-time: 2019-7-14 17:33
+ * build-time: 2021-4-6 20:9
  * LICENSE: MIT
- * (c) 2018-2019 
+ * (c) 2018-2021 
  */
-import { renderer, CanvasLayer } from 'maptalks';
+import { renderer, Coordinate, CanvasLayer } from 'maptalks';
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved.
@@ -35,821 +35,6 @@ function __extends(d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 }
-
-/**
- * Common utilities
- * @module glMatrix
- */
-// Configuration Constants
-var EPSILON = 0.000001;
-var ARRAY_TYPE = typeof Float32Array !== 'undefined' ? Float32Array : Array;
-var degree = Math.PI / 180;
-
-/**
- * 3x3 Matrix
- * @module mat3
- */
-
-/**
- * Creates a new identity mat3
- *
- * @returns {mat3} a new 3x3 matrix
- */
-
-function create() {
-  var out = new ARRAY_TYPE(9);
-
-  if (ARRAY_TYPE != Float32Array) {
-    out[1] = 0;
-    out[2] = 0;
-    out[3] = 0;
-    out[5] = 0;
-    out[6] = 0;
-    out[7] = 0;
-  }
-
-  out[0] = 1;
-  out[4] = 1;
-  out[8] = 1;
-  return out;
-}
-
-/**
- * Translate a mat4 by the given vector
- *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the matrix to translate
- * @param {vec3} v vector to translate by
- * @returns {mat4} out
- */
-
-function translate(out, a, v) {
-  var x = v[0],
-      y = v[1],
-      z = v[2];
-  var a00, a01, a02, a03;
-  var a10, a11, a12, a13;
-  var a20, a21, a22, a23;
-
-  if (a === out) {
-    out[12] = a[0] * x + a[4] * y + a[8] * z + a[12];
-    out[13] = a[1] * x + a[5] * y + a[9] * z + a[13];
-    out[14] = a[2] * x + a[6] * y + a[10] * z + a[14];
-    out[15] = a[3] * x + a[7] * y + a[11] * z + a[15];
-  } else {
-    a00 = a[0];
-    a01 = a[1];
-    a02 = a[2];
-    a03 = a[3];
-    a10 = a[4];
-    a11 = a[5];
-    a12 = a[6];
-    a13 = a[7];
-    a20 = a[8];
-    a21 = a[9];
-    a22 = a[10];
-    a23 = a[11];
-    out[0] = a00;
-    out[1] = a01;
-    out[2] = a02;
-    out[3] = a03;
-    out[4] = a10;
-    out[5] = a11;
-    out[6] = a12;
-    out[7] = a13;
-    out[8] = a20;
-    out[9] = a21;
-    out[10] = a22;
-    out[11] = a23;
-    out[12] = a00 * x + a10 * y + a20 * z + a[12];
-    out[13] = a01 * x + a11 * y + a21 * z + a[13];
-    out[14] = a02 * x + a12 * y + a22 * z + a[14];
-    out[15] = a03 * x + a13 * y + a23 * z + a[15];
-  }
-
-  return out;
-}
-/**
- * Scales the mat4 by the dimensions in the given vec3 not using vectorization
- *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the matrix to scale
- * @param {vec3} v the vec3 to scale the matrix by
- * @returns {mat4} out
- **/
-
-function scale(out, a, v) {
-  var x = v[0],
-      y = v[1],
-      z = v[2];
-  out[0] = a[0] * x;
-  out[1] = a[1] * x;
-  out[2] = a[2] * x;
-  out[3] = a[3] * x;
-  out[4] = a[4] * y;
-  out[5] = a[5] * y;
-  out[6] = a[6] * y;
-  out[7] = a[7] * y;
-  out[8] = a[8] * z;
-  out[9] = a[9] * z;
-  out[10] = a[10] * z;
-  out[11] = a[11] * z;
-  out[12] = a[12];
-  out[13] = a[13];
-  out[14] = a[14];
-  out[15] = a[15];
-  return out;
-}
-/**
- * Rotates a matrix by the given angle around the X axis
- *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the matrix to rotate
- * @param {Number} rad the angle to rotate the matrix by
- * @returns {mat4} out
- */
-
-function rotateX(out, a, rad) {
-  var s = Math.sin(rad);
-  var c = Math.cos(rad);
-  var a10 = a[4];
-  var a11 = a[5];
-  var a12 = a[6];
-  var a13 = a[7];
-  var a20 = a[8];
-  var a21 = a[9];
-  var a22 = a[10];
-  var a23 = a[11];
-
-  if (a !== out) {
-    // If the source and destination differ, copy the unchanged rows
-    out[0] = a[0];
-    out[1] = a[1];
-    out[2] = a[2];
-    out[3] = a[3];
-    out[12] = a[12];
-    out[13] = a[13];
-    out[14] = a[14];
-    out[15] = a[15];
-  } // Perform axis-specific matrix multiplication
-
-
-  out[4] = a10 * c + a20 * s;
-  out[5] = a11 * c + a21 * s;
-  out[6] = a12 * c + a22 * s;
-  out[7] = a13 * c + a23 * s;
-  out[8] = a20 * c - a10 * s;
-  out[9] = a21 * c - a11 * s;
-  out[10] = a22 * c - a12 * s;
-  out[11] = a23 * c - a13 * s;
-  return out;
-}
-/**
- * Rotates a matrix by the given angle around the Z axis
- *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the matrix to rotate
- * @param {Number} rad the angle to rotate the matrix by
- * @returns {mat4} out
- */
-
-function rotateZ(out, a, rad) {
-  var s = Math.sin(rad);
-  var c = Math.cos(rad);
-  var a00 = a[0];
-  var a01 = a[1];
-  var a02 = a[2];
-  var a03 = a[3];
-  var a10 = a[4];
-  var a11 = a[5];
-  var a12 = a[6];
-  var a13 = a[7];
-
-  if (a !== out) {
-    // If the source and destination differ, copy the unchanged last row
-    out[8] = a[8];
-    out[9] = a[9];
-    out[10] = a[10];
-    out[11] = a[11];
-    out[12] = a[12];
-    out[13] = a[13];
-    out[14] = a[14];
-    out[15] = a[15];
-  } // Perform axis-specific matrix multiplication
-
-
-  out[0] = a00 * c + a10 * s;
-  out[1] = a01 * c + a11 * s;
-  out[2] = a02 * c + a12 * s;
-  out[3] = a03 * c + a13 * s;
-  out[4] = a10 * c - a00 * s;
-  out[5] = a11 * c - a01 * s;
-  out[6] = a12 * c - a02 * s;
-  out[7] = a13 * c - a03 * s;
-  return out;
-}
-/**
- * Generates a perspective projection matrix with the given bounds.
- * Passing null/undefined/no value for far will generate infinite projection matrix.
- *
- * @param {mat4} out mat4 frustum matrix will be written into
- * @param {number} fovy Vertical field of view in radians
- * @param {number} aspect Aspect ratio. typically viewport width/height
- * @param {number} near Near bound of the frustum
- * @param {number} far Far bound of the frustum, can be null or Infinity
- * @returns {mat4} out
- */
-
-function perspective(out, fovy, aspect, near, far) {
-  var f = 1.0 / Math.tan(fovy / 2),
-      nf;
-  out[0] = f / aspect;
-  out[1] = 0;
-  out[2] = 0;
-  out[3] = 0;
-  out[4] = 0;
-  out[5] = f;
-  out[6] = 0;
-  out[7] = 0;
-  out[8] = 0;
-  out[9] = 0;
-  out[11] = -1;
-  out[12] = 0;
-  out[13] = 0;
-  out[15] = 0;
-
-  if (far != null && far !== Infinity) {
-    nf = 1 / (near - far);
-    out[10] = (far + near) * nf;
-    out[14] = 2 * far * near * nf;
-  } else {
-    out[10] = -1;
-    out[14] = -2 * near;
-  }
-
-  return out;
-}
-
-/**
- * 3 Dimensional Vector
- * @module vec3
- */
-
-/**
- * Creates a new, empty vec3
- *
- * @returns {vec3} a new 3D vector
- */
-
-function create$1() {
-  var out = new ARRAY_TYPE(3);
-
-  if (ARRAY_TYPE != Float32Array) {
-    out[0] = 0;
-    out[1] = 0;
-    out[2] = 0;
-  }
-
-  return out;
-}
-/**
- * Calculates the length of a vec3
- *
- * @param {vec3} a vector to calculate length of
- * @returns {Number} length of a
- */
-
-function length(a) {
-  var x = a[0];
-  var y = a[1];
-  var z = a[2];
-  return Math.sqrt(x * x + y * y + z * z);
-}
-/**
- * Creates a new vec3 initialized with the given values
- *
- * @param {Number} x X component
- * @param {Number} y Y component
- * @param {Number} z Z component
- * @returns {vec3} a new 3D vector
- */
-
-function fromValues(x, y, z) {
-  var out = new ARRAY_TYPE(3);
-  out[0] = x;
-  out[1] = y;
-  out[2] = z;
-  return out;
-}
-/**
- * Normalize a vec3
- *
- * @param {vec3} out the receiving vector
- * @param {vec3} a vector to normalize
- * @returns {vec3} out
- */
-
-function normalize(out, a) {
-  var x = a[0];
-  var y = a[1];
-  var z = a[2];
-  var len = x * x + y * y + z * z;
-
-  if (len > 0) {
-    //TODO: evaluate use of glm_invsqrt here?
-    len = 1 / Math.sqrt(len);
-  }
-
-  out[0] = a[0] * len;
-  out[1] = a[1] * len;
-  out[2] = a[2] * len;
-  return out;
-}
-/**
- * Calculates the dot product of two vec3's
- *
- * @param {vec3} a the first operand
- * @param {vec3} b the second operand
- * @returns {Number} dot product of a and b
- */
-
-function dot(a, b) {
-  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-/**
- * Computes the cross product of two vec3's
- *
- * @param {vec3} out the receiving vector
- * @param {vec3} a the first operand
- * @param {vec3} b the second operand
- * @returns {vec3} out
- */
-
-function cross(out, a, b) {
-  var ax = a[0],
-      ay = a[1],
-      az = a[2];
-  var bx = b[0],
-      by = b[1],
-      bz = b[2];
-  out[0] = ay * bz - az * by;
-  out[1] = az * bx - ax * bz;
-  out[2] = ax * by - ay * bx;
-  return out;
-}
-/**
- * Alias for {@link vec3.length}
- * @function
- */
-
-var len = length;
-/**
- * Perform some operation over an array of vec3s.
- *
- * @param {Array} a the array of vectors to iterate over
- * @param {Number} stride Number of elements between the start of each vec3. If 0 assumes tightly packed
- * @param {Number} offset Number of elements to skip at the beginning of the array
- * @param {Number} count Number of vec3s to iterate over. If 0 iterates over entire array
- * @param {Function} fn Function to call for each vector in the array
- * @param {Object} [arg] additional argument to pass to fn
- * @returns {Array} a
- * @function
- */
-
-var forEach = function () {
-  var vec = create$1();
-  return function (a, stride, offset, count, fn, arg) {
-    var i, l;
-
-    if (!stride) {
-      stride = 3;
-    }
-
-    if (!offset) {
-      offset = 0;
-    }
-
-    if (count) {
-      l = Math.min(count * stride + offset, a.length);
-    } else {
-      l = a.length;
-    }
-
-    for (i = offset; i < l; i += stride) {
-      vec[0] = a[i];
-      vec[1] = a[i + 1];
-      vec[2] = a[i + 2];
-      fn(vec, vec, arg);
-      a[i] = vec[0];
-      a[i + 1] = vec[1];
-      a[i + 2] = vec[2];
-    }
-
-    return a;
-  };
-}();
-
-/**
- * 4 Dimensional Vector
- * @module vec4
- */
-
-/**
- * Creates a new, empty vec4
- *
- * @returns {vec4} a new 4D vector
- */
-
-function create$2() {
-  var out = new ARRAY_TYPE(4);
-
-  if (ARRAY_TYPE != Float32Array) {
-    out[0] = 0;
-    out[1] = 0;
-    out[2] = 0;
-    out[3] = 0;
-  }
-
-  return out;
-}
-/**
- * Normalize a vec4
- *
- * @param {vec4} out the receiving vector
- * @param {vec4} a vector to normalize
- * @returns {vec4} out
- */
-
-function normalize$1(out, a) {
-  var x = a[0];
-  var y = a[1];
-  var z = a[2];
-  var w = a[3];
-  var len = x * x + y * y + z * z + w * w;
-
-  if (len > 0) {
-    len = 1 / Math.sqrt(len);
-  }
-
-  out[0] = x * len;
-  out[1] = y * len;
-  out[2] = z * len;
-  out[3] = w * len;
-  return out;
-}
-/**
- * Perform some operation over an array of vec4s.
- *
- * @param {Array} a the array of vectors to iterate over
- * @param {Number} stride Number of elements between the start of each vec4. If 0 assumes tightly packed
- * @param {Number} offset Number of elements to skip at the beginning of the array
- * @param {Number} count Number of vec4s to iterate over. If 0 iterates over entire array
- * @param {Function} fn Function to call for each vector in the array
- * @param {Object} [arg] additional argument to pass to fn
- * @returns {Array} a
- * @function
- */
-
-var forEach$1 = function () {
-  var vec = create$2();
-  return function (a, stride, offset, count, fn, arg) {
-    var i, l;
-
-    if (!stride) {
-      stride = 4;
-    }
-
-    if (!offset) {
-      offset = 0;
-    }
-
-    if (count) {
-      l = Math.min(count * stride + offset, a.length);
-    } else {
-      l = a.length;
-    }
-
-    for (i = offset; i < l; i += stride) {
-      vec[0] = a[i];
-      vec[1] = a[i + 1];
-      vec[2] = a[i + 2];
-      vec[3] = a[i + 3];
-      fn(vec, vec, arg);
-      a[i] = vec[0];
-      a[i + 1] = vec[1];
-      a[i + 2] = vec[2];
-      a[i + 3] = vec[3];
-    }
-
-    return a;
-  };
-}();
-
-/**
- * Quaternion
- * @module quat
- */
-
-/**
- * Creates a new identity quat
- *
- * @returns {quat} a new quaternion
- */
-
-function create$3() {
-  var out = new ARRAY_TYPE(4);
-
-  if (ARRAY_TYPE != Float32Array) {
-    out[0] = 0;
-    out[1] = 0;
-    out[2] = 0;
-  }
-
-  out[3] = 1;
-  return out;
-}
-/**
- * Sets a quat from the given angle and rotation axis,
- * then returns it.
- *
- * @param {quat} out the receiving quaternion
- * @param {vec3} axis the axis around which to rotate
- * @param {Number} rad the angle in radians
- * @returns {quat} out
- **/
-
-function setAxisAngle(out, axis, rad) {
-  rad = rad * 0.5;
-  var s = Math.sin(rad);
-  out[0] = s * axis[0];
-  out[1] = s * axis[1];
-  out[2] = s * axis[2];
-  out[3] = Math.cos(rad);
-  return out;
-}
-/**
- * Performs a spherical linear interpolation between two quat
- *
- * @param {quat} out the receiving quaternion
- * @param {quat} a the first operand
- * @param {quat} b the second operand
- * @param {Number} t interpolation amount, in the range [0-1], between the two inputs
- * @returns {quat} out
- */
-
-function slerp(out, a, b, t) {
-  // benchmarks:
-  //    http://jsperf.com/quaternion-slerp-implementations
-  var ax = a[0],
-      ay = a[1],
-      az = a[2],
-      aw = a[3];
-  var bx = b[0],
-      by = b[1],
-      bz = b[2],
-      bw = b[3];
-  var omega, cosom, sinom, scale0, scale1; // calc cosine
-
-  cosom = ax * bx + ay * by + az * bz + aw * bw; // adjust signs (if necessary)
-
-  if (cosom < 0.0) {
-    cosom = -cosom;
-    bx = -bx;
-    by = -by;
-    bz = -bz;
-    bw = -bw;
-  } // calculate coefficients
-
-
-  if (1.0 - cosom > EPSILON) {
-    // standard case (slerp)
-    omega = Math.acos(cosom);
-    sinom = Math.sin(omega);
-    scale0 = Math.sin((1.0 - t) * omega) / sinom;
-    scale1 = Math.sin(t * omega) / sinom;
-  } else {
-    // "from" and "to" quaternions are very close
-    //  ... so we can do a linear interpolation
-    scale0 = 1.0 - t;
-    scale1 = t;
-  } // calculate final values
-
-
-  out[0] = scale0 * ax + scale1 * bx;
-  out[1] = scale0 * ay + scale1 * by;
-  out[2] = scale0 * az + scale1 * bz;
-  out[3] = scale0 * aw + scale1 * bw;
-  return out;
-}
-/**
- * Creates a quaternion from the given 3x3 rotation matrix.
- *
- * NOTE: The resultant quaternion is not normalized, so you should be sure
- * to renormalize the quaternion yourself where necessary.
- *
- * @param {quat} out the receiving quaternion
- * @param {mat3} m rotation matrix
- * @returns {quat} out
- * @function
- */
-
-function fromMat3(out, m) {
-  // Algorithm in Ken Shoemake's article in 1987 SIGGRAPH course notes
-  // article "Quaternion Calculus and Fast Animation".
-  var fTrace = m[0] + m[4] + m[8];
-  var fRoot;
-
-  if (fTrace > 0.0) {
-    // |w| > 1/2, may as well choose w > 1/2
-    fRoot = Math.sqrt(fTrace + 1.0); // 2w
-
-    out[3] = 0.5 * fRoot;
-    fRoot = 0.5 / fRoot; // 1/(4w)
-
-    out[0] = (m[5] - m[7]) * fRoot;
-    out[1] = (m[6] - m[2]) * fRoot;
-    out[2] = (m[1] - m[3]) * fRoot;
-  } else {
-    // |w| <= 1/2
-    var i = 0;
-    if (m[4] > m[0]) i = 1;
-    if (m[8] > m[i * 3 + i]) i = 2;
-    var j = (i + 1) % 3;
-    var k = (i + 2) % 3;
-    fRoot = Math.sqrt(m[i * 3 + i] - m[j * 3 + j] - m[k * 3 + k] + 1.0);
-    out[i] = 0.5 * fRoot;
-    fRoot = 0.5 / fRoot;
-    out[3] = (m[j * 3 + k] - m[k * 3 + j]) * fRoot;
-    out[j] = (m[j * 3 + i] + m[i * 3 + j]) * fRoot;
-    out[k] = (m[k * 3 + i] + m[i * 3 + k]) * fRoot;
-  }
-
-  return out;
-}
-/**
- * Normalize a quat
- *
- * @param {quat} out the receiving quaternion
- * @param {quat} a quaternion to normalize
- * @returns {quat} out
- * @function
- */
-
-var normalize$2 = normalize$1;
-/**
- * Sets a quaternion to represent the shortest rotation from one
- * vector to another.
- *
- * Both vectors are assumed to be unit length.
- *
- * @param {quat} out the receiving quaternion.
- * @param {vec3} a the initial vector
- * @param {vec3} b the destination vector
- * @returns {quat} out
- */
-
-var rotationTo = function () {
-  var tmpvec3 = create$1();
-  var xUnitVec3 = fromValues(1, 0, 0);
-  var yUnitVec3 = fromValues(0, 1, 0);
-  return function (out, a, b) {
-    var dot$1 = dot(a, b);
-
-    if (dot$1 < -0.999999) {
-      cross(tmpvec3, xUnitVec3, a);
-      if (len(tmpvec3) < 0.000001) cross(tmpvec3, yUnitVec3, a);
-      normalize(tmpvec3, tmpvec3);
-      setAxisAngle(out, tmpvec3, Math.PI);
-      return out;
-    } else if (dot$1 > 0.999999) {
-      out[0] = 0;
-      out[1] = 0;
-      out[2] = 0;
-      out[3] = 1;
-      return out;
-    } else {
-      cross(tmpvec3, a, b);
-      out[0] = tmpvec3[0];
-      out[1] = tmpvec3[1];
-      out[2] = tmpvec3[2];
-      out[3] = 1 + dot$1;
-      return normalize$2(out, out);
-    }
-  };
-}();
-/**
- * Performs a spherical linear interpolation with two control points
- *
- * @param {quat} out the receiving quaternion
- * @param {quat} a the first operand
- * @param {quat} b the second operand
- * @param {quat} c the third operand
- * @param {quat} d the fourth operand
- * @param {Number} t interpolation amount, in the range [0-1], between the two inputs
- * @returns {quat} out
- */
-
-var sqlerp = function () {
-  var temp1 = create$3();
-  var temp2 = create$3();
-  return function (out, a, b, c, d, t) {
-    slerp(temp1, a, d, t);
-    slerp(temp2, b, c, t);
-    slerp(out, temp1, temp2, 2 * t * (1 - t));
-    return out;
-  };
-}();
-/**
- * Sets the specified quaternion with values corresponding to the given
- * axes. Each axis is a vec3 and is expected to be unit length and
- * perpendicular to all other specified axes.
- *
- * @param {vec3} view  the vector representing the viewing direction
- * @param {vec3} right the vector representing the local "right" direction
- * @param {vec3} up    the vector representing the local "up" direction
- * @returns {quat} out
- */
-
-var setAxes = function () {
-  var matr = create();
-  return function (out, view, right, up) {
-    matr[0] = right[0];
-    matr[3] = right[1];
-    matr[6] = right[2];
-    matr[1] = up[0];
-    matr[4] = up[1];
-    matr[7] = up[2];
-    matr[2] = -view[0];
-    matr[5] = -view[1];
-    matr[8] = -view[2];
-    return normalize$2(out, fromMat3(out, matr));
-  };
-}();
-
-/**
- * 2 Dimensional Vector
- * @module vec2
- */
-
-/**
- * Creates a new, empty vec2
- *
- * @returns {vec2} a new 2D vector
- */
-
-function create$4() {
-  var out = new ARRAY_TYPE(2);
-
-  if (ARRAY_TYPE != Float32Array) {
-    out[0] = 0;
-    out[1] = 0;
-  }
-
-  return out;
-}
-/**
- * Perform some operation over an array of vec2s.
- *
- * @param {Array} a the array of vectors to iterate over
- * @param {Number} stride Number of elements between the start of each vec2. If 0 assumes tightly packed
- * @param {Number} offset Number of elements to skip at the beginning of the array
- * @param {Number} count Number of vec2s to iterate over. If 0 iterates over entire array
- * @param {Function} fn Function to call for each vector in the array
- * @param {Object} [arg] additional argument to pass to fn
- * @returns {Array} a
- * @function
- */
-
-var forEach$2 = function () {
-  var vec = create$4();
-  return function (a, stride, offset, count, fn, arg) {
-    var i, l;
-
-    if (!stride) {
-      stride = 2;
-    }
-
-    if (!offset) {
-      offset = 0;
-    }
-
-    if (count) {
-      l = Math.min(count * stride + offset, a.length);
-    } else {
-      l = a.length;
-    }
-
-    for (i = offset; i < l; i += stride) {
-      vec[0] = a[i];
-      vec[1] = a[i + 1];
-      fn(vec, vec, arg);
-      a[i] = vec[0];
-      a[i + 1] = vec[1];
-    }
-
-    return a;
-  };
-}();
 
 function createShader(gl, type, source) {
     var shader = gl.createShader(type) || {};
@@ -922,17 +107,40 @@ function bindFramebuffer(gl, framebuffer, texture) {
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
     }
 }
+function getGlContext(canvas, glOptions) {
+    if (glOptions === void 0) { glOptions = {}; }
+    var names = ['webgl', 'experimental-webgl'];
+    var context = null;
+    function onContextCreationError(error) {
+        console.error(error.statusMessage);
+    }
+    canvas.addEventListener('webglcontextcreationerror', onContextCreationError, false);
+    for (var ii = 0; ii < names.length; ++ii) {
+        try {
+            context = canvas.getContext(names[ii], glOptions);
+        }
+        catch (e) { }
+        if (context) {
+            break;
+        }
+    }
+    canvas.removeEventListener('webglcontextcreationerror', onContextCreationError, false);
+    if (!context || !context.getExtension('OES_texture_float')) {
+        return null;
+    }
+    return context;
+}
 //# sourceMappingURL=utils.js.map
 
-var drawVert = "precision mediump float;\n#define GLSLIFY 1\n\nattribute float a_index;\n\nuniform sampler2D u_particles;\nuniform float u_particles_res;\n\nuniform mat4 u_matrix;\nuniform float u_dateline_offset;\n\nvarying vec2 v_particle_pos;\n\nvoid main() {\n  vec4 color = texture2D(\n    u_particles,\n    vec2(\n      fract(a_index / u_particles_res),\n      floor(a_index / u_particles_res) / u_particles_res\n    )\n  );\n\n  v_particle_pos = vec2(\n    color.r / 255.0 + color.b,\n    color.g / 255.0 + color.a\n  );\n  gl_PointSize = 1.0;\n  gl_Position = u_matrix * vec4(v_particle_pos.xy + vec2(u_dateline_offset, 0), 0, 1);\n}\n"; // eslint-disable-line
+var drawVert = "#define GLSLIFY 1\nattribute float a_index;\n\nuniform sampler2D u_particles;\nuniform float u_particles_res;\nuniform float transformScale;\nuniform vec2 projectionExtent;\nuniform vec4 transformMatrix;\n\nuniform mat4 u_matrix;\nuniform float u_dateline_offset;\n\nvarying vec2 v_particle_pos;\n\nvoid main() {\n  vec4 color = texture2D(\n    u_particles,\n    vec2(\n      fract(a_index / u_particles_res),\n      floor(a_index / u_particles_res) / u_particles_res\n    )\n  );\n\n  // 0 - 1\n  v_particle_pos = vec2(\n    color.r / 255.0 + color.b,\n    color.g / 255.0 + color.a\n  );\n\n  vec2 clipSpace = v_particle_pos * 2.0 - vec2(1.0);\n  vec2 inner_pos = clipSpace * projectionExtent;\n\n  vec2 pos = vec2(transformMatrix.x * (inner_pos.x - transformMatrix.z) / transformScale, transformMatrix.y * (inner_pos.y - transformMatrix.w) / transformScale);\n\n  gl_PointSize = 1.0;\n  gl_Position = u_matrix * vec4(pos.xy + vec2(u_dateline_offset, 0), 0, 1);\n}\n"; // eslint-disable-line
 
-var drawFrag = "precision mediump float;\n#define GLSLIFY 1\n\nuniform sampler2D u_wind;\nuniform vec2 u_wind_min;\nuniform vec2 u_wind_max;\nuniform sampler2D u_color_ramp;\n\nvarying vec2 v_particle_pos;\n\nvoid main() {\n  vec2 velocity = mix(u_wind_min, u_wind_max, texture2D(u_wind, v_particle_pos).rg);\n  float speed_t = length(velocity) / length(u_wind_max);\n\n  // color ramp is encoded in a 16x16 texture\n  vec2 ramp_pos = vec2(\n  fract(16.0 * speed_t),\n  floor(16.0 * speed_t) / 16.0);\n\n  gl_FragColor = texture2D(u_color_ramp, ramp_pos);\n}\n"; // eslint-disable-line
+var drawFrag = "precision highp float;\n#define GLSLIFY 1\n\nuniform sampler2D u_wind;\nuniform vec2 u_wind_min;\nuniform vec2 u_wind_max;\nuniform sampler2D u_color_ramp;\n\nvarying vec2 v_particle_pos;\n\nconst float PI = 3.14159265359;\n\n/**\n * Converts mapbox style pseudo-mercator coordinates (this is just like mercator, but the unit isn't a meter, but 0..1\n * spans the entire world) into texture like WGS84 coordinates (this is just like WGS84, but instead of angles, it uses\n * intervals of 0..1).\n */\nvec2 mercatorToWGS84(vec2 xy) {\n    // convert lat into an angle\n    float y = radians(180.0 - xy.y * 360.0);\n    // use the formula to convert mercator -> WGS84\n    y = 360.0 / PI  * atan(exp(y)) - 90.0;\n    // normalize back into 0..1 interval\n    y = y / -180.0 + 0.5;\n    // pass lng through, as it doesn't change\n    return vec2(xy.x, y);\n}\n\nvoid main() {\n  vec2 globalWGS84 = mercatorToWGS84(v_particle_pos);\n  vec2 velocity = mix(u_wind_min, u_wind_max, texture2D(u_wind, globalWGS84).rg);\n  float speed_t = length(velocity) / length(u_wind_max);\n\n  // color ramp is encoded in a 16x16 texture\n  vec2 ramp_pos = vec2(\n  fract(16.0 * speed_t),\n  floor(16.0 * speed_t) / 16.0);\n\n  gl_FragColor = texture2D(u_color_ramp, ramp_pos);\n}\n"; // eslint-disable-line
 
-var screenVert = "precision highp float;\n#define GLSLIFY 1\n\nattribute vec2 a_pos;\n\nvarying vec2 v_tex_pos;\n\nvoid main() {\n  v_tex_pos = a_pos;\n  gl_Position = vec4(1.0 - 2.0 * a_pos, 0, 1);\n}\n"; // eslint-disable-line
+var screenVert = "#define GLSLIFY 1\nattribute vec2 a_pos;\n\nvarying vec2 v_tex_pos;\n\nvoid main() {\n  v_tex_pos = a_pos;\n  gl_Position = vec4(1.0 - 2.0 * a_pos, 0, 1);\n}\n"; // eslint-disable-line
 
 var screenFrag = "precision highp float;\n#define GLSLIFY 1\n\nuniform sampler2D u_screen;\n\nuniform float u_opacity;\nuniform float u_opacity_border;\n\nvarying vec2 v_tex_pos;\n\nvoid main() {\n  vec2 point = 1.0 - v_tex_pos;\n  vec4 color = texture2D(u_screen, point);\n\n  if (point.x < u_opacity_border || point.x > 1. - u_opacity_border || point.y < u_opacity_border || point.y > 1. - u_opacity_border) {\n    gl_FragColor = vec4(0.);\n  } else {\n    // opacity fade out even with a value close to 0.0\n    // a hack to guarantee opacity fade out even with a value close to 1.0\n    gl_FragColor = vec4(floor(255.0 * color * u_opacity) / 255.0);\n  }\n}\n"; // eslint-disable-line
 
-var updateVert = "precision mediump float;\n#define GLSLIFY 1\n\nattribute vec2 a_pos;\n\nvarying vec2 v_tex_pos;\n\nvoid main() {\n  v_tex_pos = a_pos;\n  gl_Position = vec4(1.0 - 2.0 * a_pos, 0, 1);\n}\n"; // eslint-disable-line
+var updateVert = "#define GLSLIFY 1\nattribute vec2 a_pos;\n\nvarying vec2 v_tex_pos;\n\nvoid main() {\n  v_tex_pos = a_pos;\n  gl_Position = vec4(1.0 - 2.0 * a_pos, 0, 1);\n}\n"; // eslint-disable-line
 
 var updateFrag = "precision highp float;\n#define GLSLIFY 1\n\nuniform sampler2D u_particles;\nuniform sampler2D u_wind;\nuniform vec2 u_wind_res;\nuniform vec2 u_wind_min;\nuniform vec2 u_wind_max;\nuniform float u_rand_seed;\nuniform float u_speed_factor;\nuniform float u_drop_rate;\nuniform float u_drop_rate_bump;\n//uniform vec4 u_bbox;\n\nvarying vec2 v_tex_pos;\n\n// pseudo-random generator\nconst vec3 rand_constants = vec3(12.9898, 78.233, 4375.85453);\nfloat rand(const vec2 co) {\n  float t = dot(rand_constants.xy, co);\n  return fract(sin(t) * (rand_constants.z + t));\n}\n\n// wind speed lookup; use manual bilinear filtering based on 4 adjacent pixels for smooth interpolation\nvec2 lookup_wind(const vec2 uv) {\n  // return texture2D(u_wind, uv).rg; // lower-res hardware filtering\n  vec2 px = 1.0 / u_wind_res;\n  vec2 vc = (floor(uv * u_wind_res)) * px;\n  vec2 f = fract(uv * u_wind_res);\n  vec2 tl = texture2D(u_wind, vc).rg;\n  vec2 tr = texture2D(u_wind, vc + vec2(px.x, 0)).rg;\n  vec2 bl = texture2D(u_wind, vc + vec2(0, px.y)).rg;\n  vec2 br = texture2D(u_wind, vc + px).rg;\n  return mix(mix(tl, tr, f.x), mix(bl, br, f.x), f.y);\n}\n\nvoid main() {\n  vec4 color = texture2D(u_particles, v_tex_pos);\n  vec2 pos = vec2(\n  color.r / 255.0 + color.b,\n  color.g / 255.0 + color.a); // decode particle position from pixel RGBA\n\n  // convert to global geographic position\n  //    vec2 global_pos = u_bbox.xy + pos * (u_bbox.zw - u_bbox.xy);\n\n  vec2 velocity = mix(u_wind_min, u_wind_max, lookup_wind(pos));\n  float speed_t = length(velocity) / length(u_wind_max);\n\n  // take EPSG:4236 distortion into account for calculating where the particle moved\n  //    float distortion = cos(radians(global_pos.y * 180.0 - 90.0));\n  //    vec2 offset = vec2(velocity.x / distortion, -velocity.y) * 0.0001 * u_speed_factor;\n  vec2 offset = vec2(velocity.x, -velocity.y) * 0.0001 * u_speed_factor;\n  // update particle position, wrapping around the boundaries\n  pos = fract(1.0 + pos + offset);\n\n  // a random seed to use for the particle drop\n  vec2 seed = (pos + v_tex_pos) * u_rand_seed;\n\n  // drop rate is a chance a particle will restart at random position, to avoid degeneration\n  float drop_rate = u_drop_rate + speed_t * u_drop_rate_bump;\n  float drop = step(1.0 - drop_rate, rand(seed));\n\n  //    float retain = step(drop_rate, rand(seed));\n\n  vec2 random_pos = vec2(rand(seed + 1.3), rand(seed + 2.1));\n  //    pos = mix(pos, random_pos, 1.0 - retain);\n  pos = mix(pos, random_pos, drop);\n  // encode the new particle position back into RGBA\n  gl_FragColor = vec4(\n  fract(pos * 255.0),\n  floor(pos * 255.0) / 255.0);\n}\n"; // eslint-disable-line
 
@@ -1034,7 +242,7 @@ var WindGL = (function () {
         this.windData = data;
         this.windTexture = createTexture(this.gl, this.gl.LINEAR, image);
     };
-    WindGL.prototype.render = function (matrix, dateLineOffset) {
+    WindGL.prototype.render = function (matrix, dateLineOffset, params) {
         var gl = this.gl;
         var windData = this.windData;
         if (!gl || !windData) {
@@ -1047,18 +255,18 @@ var WindGL = (function () {
         gl.disable(gl.STENCIL_TEST);
         bindTexture(gl, this.windTexture, 0);
         bindTexture(gl, this.particleStateTexture0, 1);
-        this.drawScreen(matrix, dateLineOffset);
+        this.drawScreen(matrix, dateLineOffset, params);
         this.updateParticles();
         if (blendingEnabled) {
             gl.enable(gl.BLEND);
         }
     };
-    WindGL.prototype.drawScreen = function (matrix, dateLineOffset) {
+    WindGL.prototype.drawScreen = function (matrix, dateLineOffset, params) {
         var gl = this.gl;
         bindFramebuffer(gl, this.framebuffer, this.screenTexture);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         this.drawTexture(this.backgroundTexture, this.fadeOpacity);
-        this.drawParticles(matrix, dateLineOffset);
+        this.drawParticles(matrix, dateLineOffset, params);
         bindFramebuffer(gl, null);
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -1081,7 +289,7 @@ var WindGL = (function () {
         gl.uniform1f(program.u_opacity, opacity);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
-    WindGL.prototype.drawParticles = function (matrix, dateLineOffset) {
+    WindGL.prototype.drawParticles = function (matrix, dateLineOffset, params) {
         var gl = this.gl;
         var program = this.drawProgram;
         gl.useProgram(program.program);
@@ -1094,6 +302,9 @@ var WindGL = (function () {
         gl.uniform2f(program.u_wind_min, this.windData.uMin, this.windData.vMin);
         gl.uniform2f(program.u_wind_max, this.windData.uMax, this.windData.vMax);
         gl.uniform1f(program.u_dateline_offset, dateLineOffset);
+        gl.uniform1f(program.transformScale, params.transformScale);
+        gl.uniform2fv(program.projectionExtent, [params.projectionExtent[2], params.projectionExtent[3]]);
+        gl.uniform4fv(program.transformMatrix, params.transformMatrix);
         gl.uniformMatrix4fv(program.u_matrix, false, matrix);
         gl.drawArrays(gl.POINTS, 0, this._numParticles);
     };
@@ -1118,94 +329,8 @@ var WindGL = (function () {
         this.particleStateTexture0 = this.particleStateTexture1;
         this.particleStateTexture1 = temp;
     };
-    WindGL.wrap = function (n, min, max) {
-        var d = max - min;
-        var w = ((n - min) % d + d) % d + min;
-        return (w === min) ? max : w;
-    };
-    WindGL.clamp = function (n, min, max) {
-        return Math.min(max, Math.max(min, n));
-    };
-    WindGL.mercatorXfromLng = function (lng) {
-        return (180 + lng) / 360;
-    };
-    WindGL.mercatorYfromLat = function (lat) {
-        return (180 - (180 / Math.PI * Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360)))) / 360;
-    };
-    WindGL.project = function (lnglat, worldSize) {
-        var lat = WindGL.clamp(lnglat[1], -90, 90);
-        return [
-            WindGL.mercatorXfromLng(lnglat[0]) * worldSize,
-            WindGL.mercatorYfromLat(lat) * worldSize,
-        ];
-    };
-    WindGL.calcMatrices = function (viewCenter, zoom, viewPitch, bearing, viewFov, size) {
-        var p = viewPitch;
-        var fov = viewFov * Math.PI / 180;
-        var width = size.width, height = size.height;
-        var pitch = WindGL.clamp(p, 0, 85) / 180 * Math.PI;
-        var angle = -WindGL.wrap(bearing, -180, 180) * Math.PI / 180;
-        var scale$1 = Math.pow(2, zoom - 1);
-        var worldSize = 512 * scale$1;
-        var cameraToCenterDistance = 0.5 / Math.tan(fov / 2) * height;
-        var halfFov = fov / 2;
-        var groundAngle = Math.PI / 2 + pitch;
-        var topHalfSurfaceDistance = Math.sin(halfFov) *
-            cameraToCenterDistance / Math.sin(Math.PI - groundAngle - halfFov);
-        var center = WindGL.project(viewCenter, worldSize);
-        var x = center[0];
-        var y = center[1];
-        var furthestDistance = Math.cos(Math.PI / 2 - pitch) * topHalfSurfaceDistance + cameraToCenterDistance;
-        var farZ = furthestDistance * 1.01;
-        var m = new Float64Array(16);
-        perspective(m, fov, width / height, 1, farZ);
-        scale(m, m, [1, -1, 1]);
-        translate(m, m, [0, 0, -cameraToCenterDistance]);
-        rotateX(m, m, pitch);
-        rotateZ(m, m, angle);
-        translate(m, m, [-x, -y, 0]);
-        return scale([], m, [worldSize, worldSize, worldSize]);
-    };
     return WindGL;
 }());
-//# sourceMappingURL=index.js.map
-
-var CONTEXT_TYPES = [
-    'experimental-webgl',
-    'webgl',
-    'webkit-3d',
-    'moz-webgl',
-];
-var createCanvas = function (width, height, scaleFactor, Canvas) {
-    if (typeof document !== 'undefined') {
-        var canvas = document.createElement('canvas');
-        canvas.width = width * scaleFactor;
-        canvas.height = height * scaleFactor;
-        canvas.style.width = width + "px";
-        canvas.style.height = height + "px";
-        return canvas;
-    }
-    return new Canvas(width, height);
-};
-var createContext = function (canvas, glOptions) {
-    if (glOptions === void 0) { glOptions = {}; }
-    if (!canvas) {
-        return null;
-    }
-    var ii = CONTEXT_TYPES.length;
-    for (var i = 0; i < ii; ++i) {
-        try {
-            var context = canvas.getContext(CONTEXT_TYPES[i], glOptions);
-            if (context) {
-                return context;
-            }
-        }
-        catch (e) {
-            console.log(e);
-        }
-    }
-    return null;
-};
 //# sourceMappingURL=index.js.map
 
 var Renderer = (function (_super) {
@@ -1225,76 +350,24 @@ var Renderer = (function (_super) {
     Renderer.prototype.draw = function () {
         this.prepareCanvas();
         this.prepareDrawContext();
-        this._drawLayer();
-    };
-    Renderer.prototype.prepareDrawContext = function () {
-        _super.prototype.prepareDrawContext.call(this);
-    };
-    Renderer.prototype._drawLayer = function () {
-        var args = this._prepareDrawParams();
-        if (!args) {
-            return;
+        var layer = this.layer;
+        if (layer && layer.draw && this.gl) {
+            layer.draw(this.gl);
         }
-        this.layer.draw.apply(this.layer, args);
         this.completeRender();
     };
-    Renderer.prototype._prepareDrawParams = function () {
-        if (!this.getMap()) {
-            return null;
-        }
-        var view = this.getViewExtent();
-        if (view['maskExtent'] && !view['extent'].intersects(view['maskExtent'])) {
-            this.completeRender();
-            return null;
-        }
-        var args = [this.context, this.gl, view];
-        var params = this.getDrawParams();
-        args.push.apply(args, params ? (Array.isArray(params) ? params : [params]) : []);
-        args.push.apply(args, this._drawContext);
-        return args;
+    Renderer.prototype._redraw = function () {
+        this.prepareRender();
+        this.draw();
     };
-    Renderer.prototype.needToRedraw = function () {
-        if (this.layer.options['animation']) {
-            return true;
-        }
-        return _super.prototype.needToRedraw.call(this);
+    Renderer.prototype.clearCanvas = function () {
+        if (this.gl) ;
     };
     Renderer.prototype.createContext = function () {
-        if (this.gl && this.gl.canvas === this.canvas || this.context) {
+        if (this.gl && this.gl.canvas === this.canvas) {
             return;
         }
-        this.context = this.canvas.getContext('2d');
-        if (!this.context) {
-            return;
-        }
-        this.gl = createContext(this.canvas2, this.layer.options.glOptions);
-        var dpr = this.getMap().getDevicePixelRatio();
-        if (dpr !== 1) {
-            this.context.scale(dpr, dpr);
-        }
-    };
-    Renderer.prototype.createCanvas = function () {
-        if (!this.canvas) {
-            var map = this.getMap();
-            var size = map.getSize();
-            var retina = map.getDevicePixelRatio();
-            var _a = [retina * size.width, retina * size.height], width = _a[0], height = _a[1];
-            this.canvas = createCanvas(width, height, retina, map.CanvasClass);
-            this.canvas2 = createCanvas(width, height, retina, map.CanvasClass);
-            this.layer.fire('canvascreate', { context: this.context, gl: this.gl });
-        }
-    };
-    Renderer.prototype.checkForCanvasSizeChange = function () {
-        var map = this.getMap();
-        var size = map.getSize();
-        var newWidth = size.width;
-        var newHeight = size.height;
-        if (newWidth !== this._width || newHeight !== this._height) {
-            this._width = newWidth;
-            this._height = newHeight;
-            return true;
-        }
-        return false;
+        this.gl = getGlContext(this.canvas, this.layer.options.glOptions);
     };
     Renderer.prototype.resizeCanvas = function (canvasSize) {
         if (this.canvas && this.gl) {
@@ -1303,38 +376,10 @@ var Renderer = (function (_super) {
             var size = canvasSize || map.getSize();
             this.canvas.height = retina * size.height;
             this.canvas.width = retina * size.width;
-            if (this.canvas2) {
-                this.canvas2.width = retina * size.width;
-                this.canvas2.height = retina * size.height;
-            }
-            if (this.gl && this.canvas2) {
-                if (this.layer.wind) {
-                    this.layer.wind.resize();
-                }
+            if (this.gl) {
+                this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
             }
         }
-    };
-    Renderer.prototype.clearCanvas = function () {
-        if (!this.canvas)
-            return;
-        if (this.context) {
-            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        }
-    };
-    Renderer.prototype.prepareCanvas = function () {
-        if (!this.canvas) {
-            this.createCanvas();
-            this.createContext();
-        }
-        else {
-            this.clearCanvas();
-            if (this.checkForCanvasSizeChange()) {
-                this.resizeCanvas();
-            }
-        }
-    };
-    Renderer.prototype.renderScene = function () {
-        this.completeRender();
     };
     Renderer.prototype.drawOnInteracting = function () {
         this.draw();
@@ -1353,6 +398,34 @@ var Renderer = (function (_super) {
         }
         _super.prototype.onZoomEnd.apply(this, args);
     };
+    Renderer.prototype.onDragRotateStart = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        _super.prototype.onDragRotateStart.apply(this, args);
+    };
+    Renderer.prototype.onDragRotateEnd = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        _super.prototype.onDragRotateEnd.apply(this, args);
+    };
+    Renderer.prototype.onMoveStart = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        _super.prototype.onMoveStart.apply(this, args);
+    };
+    Renderer.prototype.onMoveEnd = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        _super.prototype.onMoveEnd.apply(this, args);
+    };
     Renderer.prototype.remove = function () {
         delete this._drawContext;
         _super.prototype.remove.call(this);
@@ -1360,18 +433,26 @@ var Renderer = (function (_super) {
     Renderer.prototype.getMap = function () {
         return _super.prototype.getMap.call(this);
     };
+    Renderer.prototype.completeRender = function () {
+        return _super.prototype.completeRender.call(this);
+    };
+    Renderer.prototype.prepareCanvas = function () {
+        return _super.prototype.prepareCanvas.call(this);
+    };
+    Renderer.prototype.prepareDrawContext = function () {
+        _super.prototype.prepareDrawContext.call(this);
+    };
+    Renderer.prototype.prepareRender = function () {
+        return _super.prototype.prepareRender.call(this);
+    };
     return Renderer;
 }(renderer.CanvasLayerRenderer));
-//# sourceMappingURL=renderer.js.map
 
-var MAX_RES = 2 * 6378137 * Math.PI / (256 * Math.pow(2, 20));
-function getMapBoxZoom(res) {
-    return 19 - Math.log(res / MAX_RES) / Math.LN2;
-}
 var _options = {
-    renderer: 'webgl',
+    renderer: 'gl',
     doubleBuffer: false,
     animation: true,
+    wrapX: true,
     glOptions: {
         antialias: false,
         depth: false,
@@ -1409,27 +490,11 @@ var WindLayer = (function (_super) {
     WindLayer.prototype.prepareToDraw = function () {
         return [];
     };
-    WindLayer.prototype.draw = function (ctx, gl) {
+    WindLayer.prototype.draw = function (gl) {
         var map = this.getMap();
         if (!map)
             return;
-        var center = map.getCenter();
-        var size = map.getSize();
-        var zoom = getMapBoxZoom(map.getResolution());
-        var p = map.getPitch();
-        var bearing = map.getBearing();
-        var fov = map.getFov();
-        var extent = map.getProjExtent();
-        var min = extent.getMin();
-        var max = extent.getMax();
-        var proj = map.getSpatialReference().getProjection();
-        var metersPerDegree = proj.metersPerDegree || (6378137 * Math.PI / 180);
-        var mercatorMatrix = WindGL.calcMatrices([
-            center.x, center.y,
-        ], zoom, p, bearing, fov, size);
         if (!this.wind) {
-            if (!ctx)
-                return;
             var _a = this.options, fadeOpacity = _a.fadeOpacity, speedFactor = _a.speedFactor, dropRate = _a.dropRate, dropRateBump = _a.dropRateBump, colorRamp = _a.colorRamp, numParticles = _a.numParticles;
             this.wind = new WindGL(gl, {
                 fadeOpacity: fadeOpacity,
@@ -1441,24 +506,67 @@ var WindLayer = (function (_super) {
             });
         }
         if (this.wind) {
-            var projCenter = map._getPrjCenter();
-            var xmin = (min.x - projCenter.x) / metersPerDegree;
-            var xmax = (max.x - projCenter.x) / metersPerDegree;
-            var eastIter = Math.max(0, Math.ceil((xmax - 180) / 360));
-            var westIter = Math.max(0, Math.ceil((xmin + 180) / -360));
-            this.wind.render(mercatorMatrix, 0);
-            for (var i = 1; i <= eastIter; i++) {
-                this.wind.render(mercatorMatrix, i);
-            }
-            for (var j = 1; j <= westIter; j++) {
-                this.wind.render(mercatorMatrix, -j);
+            var scale = map.getResolution(map.getGLZoom());
+            var proj = map.getSpatialReference().getTransformation();
+            var projObject = map.getProjection().fullExtent;
+            var projectionExtent = [
+                projObject.left,
+                projObject.bottom,
+                projObject.right,
+                projObject.top,
+            ];
+            var worlds = this.getWrappedWorlds();
+            for (var i = 0; i < worlds.length; i++) {
+                this.wind.render(map.projViewMatrix, worlds[i], {
+                    transformMatrix: proj.matrix,
+                    transformScale: scale,
+                    projectionExtent: projectionExtent,
+                });
             }
         }
-        ctx.drawImage(gl.canvas, 0, 0);
-        this.completeRender();
     };
-    WindLayer.prototype.drawOnInteracting = function (ctx, gl) {
-        this.draw(ctx, gl);
+    WindLayer.prototype.getWrappedWorlds = function () {
+        var map = this.getMap();
+        var projObject = map.getProjection().fullExtent;
+        var projectionExtent = [
+            projObject.left,
+            projObject.bottom,
+            projObject.right,
+            projObject.top,
+        ];
+        var projExtent = map.getProjExtent();
+        var extent = [
+            projExtent.xmin,
+            projExtent.ymin,
+            projExtent.xmax,
+            projExtent.ymax,
+        ];
+        var startX = extent[0];
+        var worldWidth = projectionExtent[2] - projectionExtent[0];
+        var projWorldWidth = Math.abs(map.coordToPoint(map
+            .getProjection()
+            .unprojectCoords(new Coordinate([projectionExtent[0], projectionExtent[1]])), map.getGLZoom()).x -
+            map.coordToPoint(map
+                .getProjection()
+                .unprojectCoords(new Coordinate([projectionExtent[2], projectionExtent[3]])), map.getGLZoom()).x);
+        var world = 0;
+        var result = [];
+        if (this.options.wrapX) {
+            while (startX < projectionExtent[0]) {
+                --world;
+                result.push(world * projWorldWidth);
+                startX += worldWidth;
+            }
+            world = 0;
+            startX = extent[2];
+            while (startX > projectionExtent[2]) {
+                ++world;
+                result.push(world * projWorldWidth);
+                startX -= worldWidth;
+            }
+        }
+        result.push(0);
+        return result;
     };
     WindLayer.prototype.onResize = function () {
         _super.prototype.onResize.call(this);
@@ -1485,7 +593,8 @@ var WindLayer = (function (_super) {
     };
     return WindLayer;
 }(CanvasLayer));
-WindLayer.registerRenderer('webgl', Renderer);
+WindLayer.registerRenderer('gl', Renderer);
+//# sourceMappingURL=index.js.map
 
 export { WindLayer };
 //# sourceMappingURL=maptalks.wind.esm.js.map

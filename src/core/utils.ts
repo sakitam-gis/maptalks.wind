@@ -88,6 +88,64 @@ function bindFramebuffer(gl: WebGLRenderingContext, framebuffer: WebGLBuffer|nul
   }
 }
 
+/**
+ * get gl context
+ * @param canvas
+ * @param glOptions
+ * @returns {null}
+ */
+export function getGlContext(canvas: HTMLCanvasElement, glOptions = {}) {
+  const names = ['webgl', 'experimental-webgl'];
+  let context: WebGLRenderingContext | null = null;
+
+  function onContextCreationError(error: any) {
+    console.error(error.statusMessage);
+  }
+
+  canvas.addEventListener(
+    'webglcontextcreationerror',
+    onContextCreationError,
+    false,
+  );
+  for (let ii = 0; ii < names.length; ++ii) {
+    try {
+      context = canvas.getContext(
+        names[ii],
+        glOptions,
+      ) as WebGLRenderingContext;
+    } catch (e) {} // eslint-disable-line
+    if (context) {
+      break;
+    }
+  }
+
+  canvas.removeEventListener(
+    'webglcontextcreationerror',
+    onContextCreationError,
+    false,
+  );
+
+  if (!context || !context.getExtension('OES_texture_float')) {
+    return null;
+  }
+  return context;
+}
+
+/**
+ * clear scene
+ * @param gl
+ * @param color
+ */
+export function clearScene(gl: WebGLRenderingContext, color: number[]) {
+  const [r, g, b, a] = color;
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+  gl.clearColor(r, g, b, a);
+  gl.clearDepth(1);
+  // tslint:disable-next-line:no-bitwise
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST);
+}
+
 export {
   createBuffer,
   createProgram,
